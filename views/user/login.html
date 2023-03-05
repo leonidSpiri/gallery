@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Регистрация</title>
+    <title>Вход</title>
     <meta charset="utf-8"/>
 </head>
 <body>
 <h1>Введите данные</h1>
-<form name="registerForm">
+<form name="loginForm">
     <label>Имя</label></br>
     <input type="text" name="userName"/></br></br>
-    <label>Возраст</label></br>
-    <input type="number" name="userAge"/></br></br>
     <label>Пароль</label></br>
     <input type="password" name="userPassword"/></br></br>
     <button type="submit" id="submit_btn">Отправить</button>
@@ -21,18 +19,16 @@
     document.getElementById("submit_btn").addEventListener("click", function (e) {
         e.preventDefault();
         // получаем данные формы
-        let registerForm = document.forms["registerForm"];
-        let userName = registerForm.elements["userName"].value;
-        let userAge = registerForm.elements["userAge"].value;
-        let userPassword = registerForm.elements["userPassword"].value;
-        // сериализуем данные в json
-        let user = JSON.stringify({userName: userName, userAge: userAge, userPassword: userPassword});
+        let loginForm = document.forms["loginForm"];
+        let userName = loginForm.elements["userName"].value;
+        let userPassword = loginForm.elements["userPassword"].value;
+        let user = JSON.stringify({userName: userName, userPassword: userPassword});
         let request = new XMLHttpRequest();
-        request.open("POST", "/user/registration", true);
+        request.open("POST", "/user/login", true);
         request.setRequestHeader("Content-Type", "application/json");
         request.addEventListener("load", function () {
             let receivedUser = JSON.parse(request.response);
-            document.getElementById("demo").innerHTML = receivedUser.userName + " - " + receivedUser.accessToken + " - " + receivedUser.userAge;
+            document.getElementById("demo").innerHTML = receivedUser.userName + " - " + receivedUser.accessToken;
         });
         request.send(user);
     });
