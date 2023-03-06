@@ -6,17 +6,27 @@ const path = require("path");
 const hbs = require("hbs");
 const jwt = require("jsonwebtoken");
 const MongoClient = require("mongodb").MongoClient;
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-
-const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
+//const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
 
 app.set("view engine", "hbs");
 hbs.registerPartials(__dirname + "/views/partials");
 
+const userScheme = new Schema({
+    uuid: String,
+    userName: String,
+    userAge: Number,
+    dateCreated: Date,
+    passwordHash: String,
+    accessToken: String
+});
+
 (async () => {
     try {
-        await mongoClient.connect();
-        app.locals.db = mongoClient.db("gallery");
+        //await mongoClient.connect();
+        //app.locals.db_users = mongoClient.db("gallery_users");
         app.listen(3000);
         console.log("Сервер ожидает подключения...");
     } catch (err) {
@@ -90,11 +100,15 @@ app.post("/user/registration", jsonParser, async function (request, response) {
             return
         }
         try {
-            await mongoClient.connect();
-            const db = app.locals.db;
-            const collection = db.collection("users");
-            const oldUser = await collection.findOne({userName});
 
+            await mongoose.connect("mongodb://root:1@home-system.sknt.ru:270/gallery_users", {useUnifiedTopology: true});
+            //await mongoClient.connect();
+            //const db = app.locals.db_users;
+            // const collection = db.collection("users");
+            //const oldUser = await collection.findOne({userName});
+
+            const userModel = mongoose.model("users", userScheme);
+            const oldUser = await userModel.findOne({userName})
             if (oldUser) {
                 console.log("User Already Exist. Please Login" + oldUser);
                 response.status(409).send("User Already Exist. Please Login");
@@ -110,9 +124,10 @@ app.post("/user/registration", jsonParser, async function (request, response) {
                     expiresIn: "10d",
                 }
             );
-
-            const user = {uuid, userName, userAge, passwordHash, accessToken};
-            await collection.insertOne(user);
+            const dateCreated = new Date();
+            const user = new userModel({uuid, userName, userAge, dateCreated, passwordHash, accessToken});
+            user.save()
+            //await collection.insertOne(user);
             console.log(user);
             response.status(201).json(user);
 
@@ -138,10 +153,12 @@ app.post("/user/login", jsonParser, async function (request, response) {
         }
         try {
             await mongoClient.connect();
-            const db = app.locals.db;
+            const db = app.locals.db_users;
             const collection = db.collection("users");
             const oldUser = await collection.findOne({userName});
 
+            const userModel = mongoose.model("User", userScheme);
+            const user = new userModel(oldUser);
             if (!oldUser) {
                 console.log("User Not Exist. Please Register" + oldUser);
                 response.status(404).send("User Not Exist. Please Register");
@@ -163,8 +180,7 @@ app.post("/user/login", jsonParser, async function (request, response) {
                     expiresIn: "10d",
                 }
             );
-
-            const user = {uuid, userName, newPasswordHash, accessToken};
+            user.accessToken = accessToken;
             await collection.findOneAndUpdate({userName}, {$set: user})
             console.log(user);
             response.status(201).json(user);
