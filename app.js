@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 let busboy = require('connect-busboy')
 const fs = require("fs");
 const Minio = require('minio');
+const verifyToken = require('./controllers/verifyToken');
 const Schema = mongoose.Schema;
 
 const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
@@ -102,7 +103,6 @@ app.post('/upload', function (req, res) {
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
         const fileName = req.query.fileName
-        console.log('Uploading: ' + fileName);
         const filePath = 'images/' + fileName + ".jpg"
         const fstream = fs.createWriteStream(filePath);
         const metaData = {
@@ -123,27 +123,55 @@ app.post('/upload', function (req, res) {
     });
 });
 
-app.get("/download", async function (req, res, next) {
-
+app.get("/users_photo_list", verifyToken, async function (req, res) {
     try {
+        const bucketName = "user-" + req.userTokenDecoded.userName
+        const objectsStream = minioClient.listObjects(bucketName, '', true)
+        const photosNamesArray = []
+        objectsStream.on('data', function (obj) {
+            console.log(obj)
+            photosNamesArray.push(obj.name)
+        })
+        objectsStream.on('error', function (e) {
+            console.log(e)
+            res.status(500).send("Server error");
+        })
+        objectsStream.on('end', function () {
+            res.status(200).send(photosNamesArray)
+        })
 
-        await mongoClient.connect();
-        const db = app.locals.db_photos;
-        const collection = db.collection("media");
-        const filedata = await collection.findOne({});
-        const base64String = filedata.buffer;
-        const buffer = Buffer.from(base64String, "base64");
-
-        const ph = fs.res.status(200).send(ph);
-
-        // res.status(200).send(filedata);
     } catch (err) {
         console.log(err);
-        response.status(500).send("Server error");
+        res.status(500).send("Server error");
     }
-
 });
 
+app.get("/download_photo", verifyToken, async function (req, res) {
+    try {
+        const bucketName = "user-" + req.userTokenDecoded.userName
+        const fileName = req.query.fileName
+        if (!fileName) return res.status(400).send("No file name");
+        const filePath = __dirname + "/images/" + fileName + ".jpg";
+        minioClient.fGetObject(bucketName, fileName, filePath, async function (e) {
+            if (e) {
+                res.status(404).send("File not found");
+                return console.log(e)
+            }
+            res.status(200).sendFile(filePath, function (err) {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send("Server error");
+                } else {
+                    fs.unlinkSync(filePath)
+                }
+            });
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).send("Server error");
+    }
+});
 
 //localhost:3000/user/registration
 app.post("/user/registration", jsonParser, async function (request, response) {
