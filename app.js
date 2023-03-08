@@ -7,10 +7,19 @@ const hbs = require("hbs");
 const jwt = require("jsonwebtoken");
 const MongoClient = require("mongodb").MongoClient;
 const mongoose = require("mongoose");
+let busboy = require('connect-busboy')
+const fs = require("fs");
+const Minio = require('minio');
 const Schema = mongoose.Schema;
 
-//const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
-
+const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
+const minioClient = new Minio.Client({
+    endPoint: '192.168.1.2',
+    port: 9000,
+    useSSL: false,
+    accessKey: 'minio123',
+    secretKey: 'minio123'
+});
 app.set("view engine", "hbs");
 hbs.registerPartials(__dirname + "/views/partials");
 
@@ -22,11 +31,15 @@ const userScheme = new Schema({
     passwordHash: String,
     accessToken: String
 });
-
+module.exports = app;
+app.use(busboy());
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 (async () => {
     try {
-        //await mongoClient.connect();
-        //app.locals.db_users = mongoClient.db("gallery_users");
+        await mongoClient.connect();
+        app.locals.db_users = mongoClient.db("gallery_users");
+        app.locals.db_photos = mongoClient.db("gallery_user_photos");
         app.listen(3000);
         console.log("Сервер ожидает подключения...");
     } catch (err) {
@@ -85,6 +98,46 @@ app.get("/categories/:categoryId/id/:productId", function (request, response) {
     response.json(json);
 });
 
+app.post('/upload', function (req, res) {
+    req.pipe(req.busboy);
+    req.busboy.on('file', function (fieldname, file, filename) {
+        const fileName = req.query.fileName
+        console.log('Uploading: ' + fileName);
+
+
+        const metaData = {
+            'Content-Type': 'image/jpeg',
+            'fileName': fileName
+        }
+        minioClient.fPutObject('user-a1', fileName + ".jpg", file, metaData, function (err, etag) {
+            if (err) return console.log(err)
+            console.log('File uploaded successfully.')
+        });
+
+    });
+});
+
+app.get("/download", async function (req, res, next) {
+
+    try {
+
+        await mongoClient.connect();
+        const db = app.locals.db_photos;
+        const collection = db.collection("media");
+        const filedata = await collection.findOne({});
+        const base64String = filedata.buffer;
+        const buffer = Buffer.from(base64String, "base64");
+
+        const ph = fs.res.status(200).send(ph);
+
+        // res.status(200).send(filedata);
+    } catch (err) {
+        console.log(err);
+        response.status(500).send("Server error");
+    }
+
+});
+
 
 //localhost:3000/user/registration
 app.post("/user/registration", jsonParser, async function (request, response) {
@@ -101,14 +154,12 @@ app.post("/user/registration", jsonParser, async function (request, response) {
         }
         try {
 
-            await mongoose.connect("mongodb://root:1@home-system.sknt.ru:270/gallery_users", {useUnifiedTopology: true});
-            //await mongoClient.connect();
-            //const db = app.locals.db_users;
-            // const collection = db.collection("users");
-            //const oldUser = await collection.findOne({userName});
+            await mongoClient.connect();
+            const db = app.locals.db_users;
+            const collection = db.collection("users");
+            const oldUser = await collection.findOne({userName});
 
-            const userModel = mongoose.model("users", userScheme);
-            const oldUser = await userModel.findOne({userName})
+            const UsersModel = mongoose.model("users", userScheme);
             if (oldUser) {
                 console.log("User Already Exist. Please Login" + oldUser);
                 response.status(409).send("User Already Exist. Please Login");
@@ -125,9 +176,8 @@ app.post("/user/registration", jsonParser, async function (request, response) {
                 }
             );
             const dateCreated = new Date();
-            const user = new userModel({uuid, userName, userAge, dateCreated, passwordHash, accessToken});
-            user.save()
-            //await collection.insertOne(user);
+            const user = new UsersModel({uuid, userName, userAge, dateCreated, passwordHash, accessToken});
+            await collection.insertOne(user);
             console.log(user);
             response.status(201).json(user);
 
