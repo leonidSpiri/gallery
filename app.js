@@ -103,16 +103,22 @@ app.post('/upload', function (req, res) {
     req.busboy.on('file', function (fieldname, file, filename) {
         const fileName = req.query.fileName
         console.log('Uploading: ' + fileName);
-
-
+        const filePath = 'images/' + fileName + ".jpg"
+        const fstream = fs.createWriteStream(filePath);
         const metaData = {
             'Content-Type': 'image/jpeg',
             'fileName': fileName
         }
-        minioClient.fPutObject('user-a1', fileName + ".jpg", file, metaData, function (err, etag) {
-            if (err) return console.log(err)
-            console.log('File uploaded successfully.')
+        file.pipe(fstream);
+        fstream.on('close', function () {
+            minioClient.fPutObject('user-a1', fileName + ".jpg", filePath, metaData, function (err, etag) {
+                if (err) return console.log(err)
+                fs.unlinkSync(filePath)
+                console.log('File uploaded successfully.')
+                res.status(200).send("File uploaded successfully.")
+            });
         });
+
 
     });
 });
