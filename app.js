@@ -10,6 +10,8 @@ const mongoose = require("mongoose");
 let busboy = require('connect-busboy')
 const fs = require("fs");
 const Minio = require('minio');
+const {Pool} = require('pg');
+
 const verifyToken = require('./controllers/verifyToken');
 const Schema = mongoose.Schema;
 
@@ -21,6 +23,16 @@ const minioClient = new Minio.Client({
     accessKey: 'minio123',
     secretKey: 'minio123'
 });
+
+const sql = new Pool({
+    user: 'admin',
+    database: 'gallery',
+    password: 'root',
+    port: 271,
+    host: 'home-system.sknt.ru',
+});
+
+
 app.set("view engine", "hbs");
 hbs.registerPartials(__dirname + "/views/partials");
 
@@ -178,43 +190,53 @@ app.post("/user/registration", jsonParser, async function (request, response) {
     console.log(request.body);
     if (!request.body) return response.sendStatus(400);
     else {
-        let userName = request.body.userName.toString();
-        let userAge = request.body.userAge.toString();
-        let password = request.body.userPassword.toString();
-        if (userName === '' || userAge === '' || password === '') {
-            response.status(400).send("All input is required");
-            console.log("All input is required");
-            return
-        }
         try {
-
-            await mongoClient.connect();
-            const db = app.locals.db_users;
-            const collection = db.collection("users");
-            const oldUser = await collection.findOne({userName});
-
-            const UsersModel = mongoose.model("users", userScheme);
-            if (oldUser) {
-                console.log("User Already Exist. Please Login" + oldUser);
-                response.status(409).send("User Already Exist. Please Login");
+            let userName = request.body.userName;
+            let userEmail = request.body.userEmail;
+            let password = request.body.userPassword;
+            if ((userName === '' || userEmail === '' || password === '') || (userName === undefined || userEmail === undefined || password === undefined)) {
+                response.status(400).send("All input is required");
+                console.log("All input is required");
                 return
             }
 
-            const uuid = crypto.randomUUID();
-            const passwordHash = crypto.createHash('md5').update(password).digest('hex');
-            const accessToken = jwt.sign(
-                {user_id: uuid, userName},
-                "secretKey",
-                {
-                    expiresIn: "10d",
-                }
-            );
-            const dateCreated = new Date();
-            const user = new UsersModel({uuid, userName, userAge, dateCreated, passwordHash, accessToken});
-            await collection.insertOne(user);
-            console.log(user);
-            response.status(201).json(user);
+            await sql.connect()
+            await sql.query("select * from users where email = '" + userEmail + "';",
+                async function (err, results, fields) {
+                    if (err) {
+                        console.log(err);
+                        response.status(500).send("Server error");
+                        return
+                    }
 
+                    console.log(results.rowCount);
+                    if (results.rowCount > 0) {
+                        console.log("User Already Exist. Please Login");
+                        response.status(409).send("User Already Exist. Please Login");
+                        return
+                    } else {
+                        const user_id = crypto.randomUUID();
+                        const passwordHash = crypto.createHash('md5').update(password).digest('hex');
+                        const accessToken = jwt.sign(
+                            {user_id: user_id, userEmail: userEmail.toString()},
+                            "secretKey",
+                            {
+                                expiresIn: "10d",
+                            }
+                        );
+                        const dateCreated = Date.now();
+                        const request = "insert into users (user_id, email, password_hash, username, date_created, access_token) values ('" + user_id + "', '" + userEmail.toString() + "', '" + passwordHash + "', '" + userName.toString() + "', '" + dateCreated + "', '" + accessToken + "');";
+                        console.log(request)
+                        await sql.query(request, function (err, results, fields) {
+                            if (err) {
+                                console.log(err);
+                                response.status(500).send("Server error");
+                            }
+                            response.status(201).json({accessToken: accessToken});
+                        });
+
+                    }
+                });
         } catch (err) {
             console.log(err);
             response.status(500).send("Server error");
@@ -228,46 +250,57 @@ app.post("/user/login", jsonParser, async function (request, response) {
     console.log(request.body);
     if (!request.body) return response.sendStatus(400);
     else {
-        let userName = request.body.userName.toString();
+        let userEmail = request.body.userEmail.toString();
         let password = request.body.userPassword.toString();
-        if (userName === '' || password === '') {
+        if ((userEmail === '' || password === '') || (userEmail === undefined || password === undefined)) {
             response.status(400).send("All input is required");
             console.log("All input is required");
             return
         }
         try {
-            await mongoClient.connect();
-            const db = app.locals.db_users;
-            const collection = db.collection("users");
-            const oldUser = await collection.findOne({userName});
+            await sql.connect()
+            await sql.query("select * from users where email = '" + userEmail + "';",
+                async function (err, results, fields) {
+                    if (err) {
+                        console.log(err);
+                        response.status(500).send("Server error");
+                        return
+                    }
 
-            const userModel = mongoose.model("User", userScheme);
-            const user = new userModel(oldUser);
-            if (!oldUser) {
-                console.log("User Not Exist. Please Register" + oldUser);
-                response.status(404).send("User Not Exist. Please Register");
-                return
-            }
-            const uuid = oldUser.uuid;
-            const newPasswordHash = crypto.createHash('md5').update(password).digest('hex');
-            const oldPasswordHash = oldUser.passwordHash;
-            if (newPasswordHash !== oldPasswordHash) {
-                console.log("Password is not correct");
-                response.status(403).send("Password is not correct");
-                return
-            }
+                    if (results.rowCount === 1) {
+                        const user = results.rows[0];
+                        console.log(user);
+                        const user_id = user.user_id;
+                        const newPasswordHash = crypto.createHash('md5').update(password).digest('hex');
+                        const oldPasswordHash = user.password_hash;
+                        if (newPasswordHash !== oldPasswordHash) {
+                            console.log("Password is not correct");
+                            response.status(403).send("Password is not correct");
+                            return
+                        }
 
-            const accessToken = jwt.sign(
-                {user_id: uuid, userName},
-                "secretKey",
-                {
-                    expiresIn: "10d",
-                }
-            );
-            user.accessToken = accessToken;
-            await collection.findOneAndUpdate({userName}, {$set: user})
-            console.log(user);
-            response.status(201).json(user);
+                        const accessToken = jwt.sign(
+                            {user_id: user_id, userEmail: userEmail.toString()},
+                            "secretKey",
+                            {
+                                expiresIn: "10d",
+                            }
+                        );
+                        user.access_token = accessToken;
+                        await sql.query("update users set access_token = '" + accessToken + "' where user_id = '" + user_id + "';",
+                            function (err, results, fields) {
+                                if (err) {
+                                    console.log(err);
+                                    response.status(500).send("Server error");
+                                    return
+                                }
+                                response.status(201).json(user);
+                            });
+                    } else {
+                        console.log("User Not Exist. Please Register");
+                        response.status(404).send("User Not Exist. Please Register");
+                    }
+                });
         } catch (err) {
             console.log(err);
             response.status(500).send("Server error");
