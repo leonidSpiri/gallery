@@ -111,7 +111,8 @@ app.get("/categories/:categoryId/id/:productId", function (request, response) {
     response.json(json);
 });
 
-app.post('/upload', function (req, res) {
+app.post('/upload', verifyToken, function (req, res) {
+    const bucketName = "user-" + req.userTokenDecoded.user_id
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
         const fileName = req.query.fileName
@@ -123,7 +124,7 @@ app.post('/upload', function (req, res) {
         }
         file.pipe(fstream);
         fstream.on('close', function () {
-            minioClient.fPutObject('user-a1', fileName + ".jpg", filePath, metaData, function (err, etag) {
+            minioClient.fPutObject(bucketName, fileName + ".jpg", filePath, metaData, function (err, etag) {
                 if (err) return console.log(err)
                 fs.unlinkSync(filePath)
                 console.log('File uploaded successfully.')
@@ -137,7 +138,7 @@ app.post('/upload', function (req, res) {
 
 app.get("/users_photo_list", verifyToken, async function (req, res) {
     try {
-        const bucketName = "user-" + req.userTokenDecoded.userName
+        const bucketName = "user-" + req.userTokenDecoded.user_id
         const objectsStream = minioClient.listObjects(bucketName, '', true)
         const photosNamesArray = []
         objectsStream.on('data', function (obj) {
@@ -160,24 +161,26 @@ app.get("/users_photo_list", verifyToken, async function (req, res) {
 
 app.get("/download_photo", verifyToken, async function (req, res) {
     try {
-        const bucketName = "user-" + req.userTokenDecoded.userName
-        const fileName = req.query.fileName
-        if (!fileName) return res.status(400).send("No file name");
-        const filePath = __dirname + "/images/" + fileName + ".jpg";
-        minioClient.fGetObject(bucketName, fileName, filePath, async function (e) {
-            if (e) {
-                res.status(404).send("File not found");
-                return console.log(e)
+        const bucketName = "user-" + req.userTokenDecoded.user_id
+        let data;
+        minioClient.getObject(bucketName, req.query.fileName, function (err, objStream) {
+            if (err) {
+                return console.log(err)
             }
-            res.status(200).sendFile(filePath, function (err) {
-                if (err) {
-                    console.log(err);
-                    res.status(500).send("Server error");
-                } else {
-                    fs.unlinkSync(filePath)
-                }
-            });
+            objStream.on('data', function (chunk) {
+                data = !data ? new Buffer(chunk) : Buffer.concat([data, chunk]);
+            })
+            objStream.on('end', function () {
+                res.writeHead(200, {'Content-Type': 'image/jpeg'});
+                res.write(data);
+                res.end();
+            })
+            objStream.on('error', function (err) {
+                res.status(500);
+                res.send(err);
+            })
         });
+
 
     } catch (err) {
         console.log(err);
@@ -232,7 +235,19 @@ app.post("/user/registration", jsonParser, async function (request, response) {
                                 console.log(err);
                                 response.status(500).send("Server error");
                             }
-                            response.status(201).json({accessToken: accessToken});
+
+                            const bucketName = "user-" + user_id
+                            minioClient.makeBucket(bucketName, function (err2) {
+                                if (err2) {
+                                    console.log("error on creating bucket", err2);
+                                    response.status(500).send("Server error");
+                                } else {
+                                    console.log("bucket created successfully");
+                                    response.status(201).json({accessToken: accessToken});
+                                }
+                            });
+
+
                         });
 
                     }
@@ -294,7 +309,7 @@ app.post("/user/login", jsonParser, async function (request, response) {
                                     response.status(500).send("Server error");
                                     return
                                 }
-                                response.status(201).json(user);
+                                response.status(200).json(user);
                             });
                     } else {
                         console.log("User Not Exist. Please Register");
