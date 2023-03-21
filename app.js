@@ -1,21 +1,35 @@
-const express = require("express");
+//const express = require("express");
+//const crypto = require('crypto');
+//const path = require("path");
+//const hbs = require("hbs");
+//const jwt = require("jsonwebtoken");
+//let busboy = require('connect-busboy')
+//import {Pool} from 'pg';
+//const fs = require("fs");
+//const Minio = require('minio');
+//const {Pool} = require('pg');
+//const exifImage = require('exif').ExifImage;
+//const verifyToken = require('./controllers/verifyToken');
+
+import {fileTypeFromStream} from 'file-type';
+import express from 'express';
+import crypto from 'crypto';
+import path from 'path';
+import jwt from 'jsonwebtoken';
+import busboy from 'connect-busboy';
+import fs from 'fs';
+import Minio from 'minio';
+import pkg from 'pg';
+import exifImage from 'exif';
+import verifyToken from './controllers/verifyToken.js';
+
+const {Pool} = pkg;
+
+
 const app = express();
 const jsonParser = express.json();
-const crypto = require('crypto');
-const path = require("path");
-const hbs = require("hbs");
-const jwt = require("jsonwebtoken");
-const MongoClient = require("mongodb").MongoClient;
-const mongoose = require("mongoose");
-let busboy = require('connect-busboy')
-const fs = require("fs");
-const Minio = require('minio');
-const {Pool} = require('pg');
 
-const verifyToken = require('./controllers/verifyToken');
-const Schema = mongoose.Schema;
 
-const mongoClient = new MongoClient("mongodb://root:1@home-system.sknt.ru:270/", {useUnifiedTopology: true});
 const minioClient = new Minio.Client({
     endPoint: '192.168.1.2',
     port: 9000,
@@ -32,27 +46,13 @@ const sql = new Pool({
     host: 'home-system.sknt.ru',
 });
 
-
-app.set("view engine", "hbs");
-hbs.registerPartials(__dirname + "/views/partials");
-
-const userScheme = new Schema({
-    uuid: String,
-    userName: String,
-    userAge: Number,
-    dateCreated: Date,
-    passwordHash: String,
-    accessToken: String
-});
-module.exports = app;
+export default app;
 app.use(busboy());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+
 (async () => {
     try {
-        await mongoClient.connect();
-        app.locals.db_users = mongoClient.db("gallery_users");
-        app.locals.db_photos = mongoClient.db("gallery_user_photos");
         app.listen(3000);
         console.log("Сервер ожидает подключения...");
     } catch (err) {
@@ -63,22 +63,6 @@ app.use(express.urlencoded({extended: true}));
 app.use(function (request, response, next) {
     console.log("Middleware");
     next();
-});
-
-
-//localhost:3000/static/user/registration.html
-app.use("/static", express.static(__dirname + "/views"));
-
-
-//localhost:3000/user/profile.html
-app.use("/user/profile.html", function (_, response) {
-    response.render("user/profile.hbs", {
-        title: "My profile",
-        userName: "Root",
-        userAge: "20",
-        albumsVisible: true,
-        albums: ["Sochi 2023", "Ladoga 2022", "Moscow 2023"],
-    });
 });
 
 
@@ -112,28 +96,45 @@ app.get("/categories/:categoryId/id/:productId", function (request, response) {
 });
 
 app.post('/upload', verifyToken, function (req, res) {
-    const bucketName = "user-" + req.userTokenDecoded.user_id
-    req.pipe(req.busboy);
-    req.busboy.on('file', function (fieldname, file, filename) {
-        const fileName = req.query.fileName
-        const filePath = 'images/' + fileName + ".jpg"
-        const fstream = fs.createWriteStream(filePath);
-        const metaData = {
-            'Content-Type': 'image/jpeg',
-            'fileName': fileName
-        }
-        file.pipe(fstream);
-        fstream.on('close', function () {
-            minioClient.fPutObject(bucketName, fileName + ".jpg", filePath, metaData, function (err, etag) {
-                if (err) return console.log(err)
-                fs.unlinkSync(filePath)
-                console.log('File uploaded successfully.')
-                res.status(200).send("File uploaded successfully.")
+    try {
+        const bucketName = "user-" + req.userTokenDecoded.user_id
+        req.pipe(req.busboy);
+        req.busboy.on('file', async function (fieldname, file) {
+
+            const fileName = req.query.fileName;
+            const fileType = await fileTypeFromStream(file)
+            const filePath = 'images/' + fileName + "." + fileType.ext;
+            const fstream = fs.createWriteStream(filePath);
+            const metaData = {
+                'Content-Type': fileType.mime,
+                'fileName': fileName
+            }
+            console.log(metaData)
+            console.log(filePath)
+            file.pipe(fstream);
+            fstream.on('close', async function () {
+
+                await new exifImage({image: filePath}, function (error, exifData) {
+                    if (error)
+                        console.log('Error: ' + error.message);
+                    else
+                        console.log(exifData); // Do something with your data!
+                });
+
+                await minioClient.fPutObject(bucketName, fileName + "." + fileType.ext, filePath, metaData, function (err, etag) {
+                    if (err) return console.log(err)
+                    //fs.unlinkSync(filePath)
+                    console.log('File uploaded successfully.')
+                    res.status(200).send("File uploaded successfully.")
+                });
             });
+
+
         });
-
-
-    });
+    } catch (error) {
+        console.log('Error: ' + error.message);
+        res.status(500).send("Server error");
+    }
 });
 
 app.get("/users_photo_list", verifyToken, async function (req, res) {
@@ -168,7 +169,7 @@ app.get("/download_photo", verifyToken, async function (req, res) {
                 return console.log(err)
             }
             objStream.on('data', function (chunk) {
-                data = !data ? new Buffer(chunk) : Buffer.concat([data, chunk]);
+                data = !data ? new Buffer.from(chunk) : Buffer.concat([data, chunk]);
             })
             objStream.on('end', function () {
                 res.writeHead(200, {'Content-Type': 'image/jpeg'});
@@ -205,7 +206,7 @@ app.post("/user/registration", jsonParser, async function (request, response) {
 
             await sql.connect()
             await sql.query("select * from users where email = '" + userEmail + "';",
-                async function (err, results, fields) {
+                async function (err, results) {
                     if (err) {
                         console.log(err);
                         response.status(500).send("Server error");
@@ -230,7 +231,7 @@ app.post("/user/registration", jsonParser, async function (request, response) {
                         const dateCreated = Date.now();
                         const request = "insert into users (user_id, email, password_hash, username, date_created, access_token) values ('" + user_id + "', '" + userEmail.toString() + "', '" + passwordHash + "', '" + userName.toString() + "', '" + dateCreated + "', '" + accessToken + "');";
                         console.log(request)
-                        await sql.query(request, function (err, results, fields) {
+                        await sql.query(request, function (err) {
                             if (err) {
                                 console.log(err);
                                 response.status(500).send("Server error");
@@ -275,7 +276,7 @@ app.post("/user/login", jsonParser, async function (request, response) {
         try {
             await sql.connect()
             await sql.query("select * from users where email = '" + userEmail + "';",
-                async function (err, results, fields) {
+                async function (err, results) {
                     if (err) {
                         console.log(err);
                         response.status(500).send("Server error");
@@ -303,7 +304,7 @@ app.post("/user/login", jsonParser, async function (request, response) {
                         );
                         user.access_token = accessToken;
                         await sql.query("update users set access_token = '" + accessToken + "' where user_id = '" + user_id + "';",
-                            function (err, results, fields) {
+                            function (err) {
                                 if (err) {
                                     console.log(err);
                                     response.status(500).send("Server error");
@@ -325,8 +326,6 @@ app.post("/user/login", jsonParser, async function (request, response) {
 
 
 process.on("SIGINT", async () => {
-
-    await mongoClient.close();
     console.log("Приложение завершило работу");
     process.exit();
 });
