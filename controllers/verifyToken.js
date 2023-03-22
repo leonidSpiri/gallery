@@ -1,7 +1,5 @@
-import pkg from 'pg';
-import jwt from 'jsonwebtoken';
-
-const {Pool} = pkg;
+const jwt = require("jsonwebtoken");
+const {Pool} = require("pg");
 
 const sql = new Pool({
     user: 'admin',
@@ -55,5 +53,4 @@ function getToken(req) {
     return null;
 }
 
-//module.exports = verifyToken;
-export default verifyToken;
+module.exports = verifyToken;

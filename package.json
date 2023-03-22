@@ -2,25 +2,22 @@
   "name": "gallery",
   "version": "1.0.0",
   "description": "gallery web server",
-  "exports": "./index.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main.js",
     "start-express": "node app.js"
   },
-  "type": "module",
   "keywords": [],
   "author": "Leonid Spiridonov",
   "license": "ISC",
   "dependencies": {
     "connect-busboy": "^1.0.0",
     "express": "^4.18.2",
-    "hbs": "^4.2.0",
+    "express-fileupload": "^1.4.0",
     "jsonwebtoken": "^9.0.0",
     "minio": "^7.0.32",
-    "pg": "^8.10.0",
-    "exif": "^0.6.0",
-    "file-type": "^18.2.1"
+    "pg": "^8.10.0"
   },
   "devDependencies": {
     "jasmine-node": "^1.16.0"
