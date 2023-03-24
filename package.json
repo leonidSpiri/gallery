@@ -18,7 +18,8 @@
     "express-fileupload": "^1.4.0",
     "jsonwebtoken": "^9.0.0",
     "minio": "^7.0.32",
-    "pg": "^8.10.0"
+    "pg": "^8.10.0",
+    "resize-image-buffer": "^1.0.0"
   },
   "devDependencies": {
     "jasmine-node": "^1.16.0"
