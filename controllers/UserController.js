@@ -62,12 +62,14 @@ exports.registration = async function (request, response) {
                             }
                         );
                         const dateCreated = Date.now();
+
                         const requestUser = "insert into users (user_id, email, password_hash, username, date_created, access_token) values ('" + user_id + "', '" + userEmail.toString() + "', '" + passwordHash + "', '" + userName.toString() + "', '" + dateCreated + "', '" + accessToken + "');";
                         console.log(requestUser)
                         await sql.query(requestUser, async function (err) {
                             if (err) {
                                 console.log(err);
                                 response.status(500).send("Server error");
+                                return
                             }
                         });
                         const bucketName = "user-" + user_id
@@ -122,7 +124,14 @@ exports.login = async function (request, response) {
                     }
 
                     if (results.rowCount === 1) {
-                        const user = results.rows[0];
+                        const user = {
+                            user_id: results.rows[0].user_id,
+                            email: results.rows[0].email.toString(),
+                            password_hash: results.rows[0].password_hash,
+                            username: results.rows[0].username.toString(),
+                            date_created: results.rows[0].date_created,
+                            access_token: results.rows[0].access_token
+                        }
                         console.log(user);
                         const user_id = user.user_id;
                         const newPasswordHash = crypto.createHash('md5').update(password).digest('hex');
