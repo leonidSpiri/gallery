@@ -136,7 +136,7 @@ exports.userPhotoList = async function (req, res) {
                 }
                 if (resultMedia.rows.length === 0) {
                     res.status(404).send("Not found");
-                    return;
+                    return
                 }
                 for (let i = 0; i < resultMedia.rows.length; i++) {
                     let json = {
