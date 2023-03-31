@@ -20,8 +20,55 @@ const sql = new Pool({
     host: 'home-system.sknt.ru',
 });
 
+//localhost:3000/users/refresh_token
+exports.refreshToken = async function (request, response) {
+    const user_id = request.userTokenDecoded.user_id;
+    try {
+        await sql.connect()
+        await sql.query("select * from users where user_id = '" + user_id + "';",
+            async function (err, results) {
+                if (err) {
+                    console.log(err);
+                    response.status(500).send(serverError(err));
+                    return
+                }
 
-//localhost:3000/user/registration
+                const user = {
+                    user_id: results.rows[0].user_id,
+                    email: results.rows[0].email.toString(),
+                    password_hash: results.rows[0].password_hash,
+                    username: results.rows[0].username.toString(),
+                    date_created: results.rows[0].date_created,
+                    access_token: results.rows[0].access_token
+                }
+                console.log(user);
+                const accessToken = jwt.sign(
+                    {user_id: user.user_id, userEmail: user.email.toString()},
+                    "secretKey",
+                    {
+                        expiresIn: "10d",
+                    }
+                );
+                user.access_token = accessToken;
+                await sql.query("update users set access_token = '" + accessToken + "' where user_id = '" + user_id + "';",
+                    function (err) {
+                        if (err) {
+                            console.log(err);
+                            response.status(500).send(serverError(err));
+                            return
+                        }
+                        const myResponse = new responseModel(null, user, "Success");
+                        response.status(200).json(myResponse.toJson());
+                    });
+            });
+    } catch (e) {
+        console.log(e);
+        response.status(500).send(serverError(err));
+    }
+}
+
+
+//localhost:3000/users/registration
 exports.registration = async function (request, response) {
     console.log(request.body);
     if (!request.body) {
@@ -76,7 +123,7 @@ exports.registration = async function (request, response) {
                 );
                 user.access_token = accessToken;
                 const dateCreated = Date.now();
-                user.date_created = dateCreated;
+                user.date_created = dateCreated.toString();
 
                 const requestUser = "insert into users (user_id, email, password_hash, username, date_created, access_token) values ('" + user_id + "', '" + userEmail.toString() + "', '" + passwordHash + "', '" + userName.toString() + "', '" + dateCreated + "', '" + accessToken + "');";
                 console.log(requestUser)
@@ -118,7 +165,7 @@ exports.registration = async function (request, response) {
     }
 }
 
-//localhost:3000/user/login
+//localhost:3000/users/login
 exports.login = async function (request, response) {
     console.log(request.body);
     if (!request.body) {

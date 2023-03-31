@@ -45,6 +45,7 @@ exports.upload = async function (req, res) {
         let original_geo_location = "";
         let timestamp = Date.now();
         let original_camera_info = "";
+        let description = "";
         await new exifImage({image: files.file.data}, async function (error, exifData) {
             if (error)
                 console.log('Error: ' + error.message);
@@ -67,30 +68,58 @@ exports.upload = async function (req, res) {
                     original_geo_location = latFinal + " " + lonFinal;
                 }
                 if (exifData.exif !== undefined) {
-                    const original_date_created = exifData.exif.CreateDate;
+                    let original_date_created = exifData.exif.CreateDate;
+                    console.log(original_date_created)
+                    if (original_date_created === undefined) {
+                        original_date_created = exifData.image.ModifyDate;
+                        console.log(original_date_created)
+                    }
+                    if (original_date_created === undefined) {
+                        original_date_created = exifData.exif.DateTimeOriginal;
+                        console.log(original_date_created)
+                    }
+                    if (original_date_created === undefined) {
+                        console.log(original_date_created)
+                        return
+                    }
                     const dateParts = original_date_created.split(/[ :]/);
+                    console.log(dateParts)
                     const dateObj = new Date(
                         Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], dateParts[3], dateParts[4], dateParts[5])
                     );
                     timestamp = dateObj.getTime();
                 }
-                if (exifData.image !== undefined)
+                if (exifData.image !== undefined) {
                     original_camera_info = exifData.image.Make + " " + exifData.image.Model;
+                    if (exifData.image.ImageDescription !== undefined)
+                        description = exifData.image.ImageDescription;
+                }
             }
 
 
             const file_location = media_id + fileExtension;
-            const requestMedia = "insert into media (media_id, album_id, description, file_location, media_type, date_created, geo_location, camera_info, is_favourite, is_deleted, original_name)" +
-                " values ('" + media_id + "', '" + album_id + "', '', '" + file_location + "', '" + media_type + "', '" + timestamp + "', '" + original_geo_location + "', '" + original_camera_info + "', 'false', 'false', '" + original_name + "');";
+            const requestMedia = "insert into media (media_id, description, file_location, media_type, date_created, geo_location, camera_info, is_favourite, is_deleted, original_name)" +
+                " values ('" + media_id + "', '" + description + "', '" + file_location + "', '" + media_type + "', '" + timestamp + "', '" + original_geo_location + "', '" + original_camera_info + "', 'false', 'false', '" + original_name + "');";
             console.log(requestMedia)
 
-
-            await sql.query(requestMedia, function (err2) {
+            await sql.query(requestMedia, async function (err2) {
                 if (err2) {
                     console.log(err2);
                     res.status(500).send("Server error");
                     return
                 }
+
+
+                const requestMediaRelation = "insert into media_relation (media_id, album_id) values ('" + media_id + "', '" + album_id + "');";
+                console.log(requestMediaRelation)
+
+                await sql.query(requestMediaRelation, function (err2) {
+                    if (err2) {
+                        console.log(err2);
+                        res.status(500).send("Server error");
+                        return
+                    }
+                });
             });
             minioClient.putObject(bucketName, file_location, files.file.data, files.file.size, media_type, function (err) {
                 if (err) {
@@ -126,7 +155,10 @@ exports.userPhotoList = async function (req, res) {
                 return
             }
             const album_id = resultAlbum.rows[0].album_id;
-            const requestMedia = "SELECT * FROM media WHERE album_id = '" + album_id.toString() + "';";
+            const requestMedia = "SELECT m.*\n" +
+                "FROM media m\n" +
+                "         JOIN media_relation mr ON m.media_id = mr.media_id\n" +
+                "WHERE mr.album_id = '" + album_id + "';";
             console.log(requestMedia)
             await sql.query(requestMedia, function (err2, resultMedia) {
                 if (err2) {
@@ -141,7 +173,7 @@ exports.userPhotoList = async function (req, res) {
                 for (let i = 0; i < resultMedia.rows.length; i++) {
                     let json = {
                         "media_id": resultMedia.rows[i].media_id,
-                        "album_id": resultMedia.rows[i].album_id,
+                        "album_id": album_id,
                         "description": resultMedia.rows[i].description,
                         "file_location": resultMedia.rows[i].file_location,
                         "media_type": resultMedia.rows[i].media_type,

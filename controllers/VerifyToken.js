@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const {Pool} = require("pg");
+const responseModel = require('../models/ResponseModel');
 
 const sql = new Pool({
     user: 'admin',
@@ -12,7 +13,9 @@ const sql = new Pool({
 const verifyToken = async (req, res, next) => {
     const token = getToken(req).toString();
     if (!token) {
-        return res.status(403).send("A token is required for authentication");
+        const myResponse = new responseModel("Some error occurred", null, "A token is required for authentication");
+        res.status(403).send(myResponse.toJson());
+        return
     }
     try {
         req.userTokenDecoded = jwt.verify(token, "secretKey");
@@ -21,25 +24,28 @@ const verifyToken = async (req, res, next) => {
 
         await sql.connect()
         await sql.query("SELECT access_token FROM users WHERE user_id ='" + req.userTokenDecoded.user_id + "';",
-            async function (err, results, fields) {
+            async function (err, results) {
                 if (err) {
                     console.log(err);
-                    response.status(500).send("Server error");
+                    response.status(500).send(serverError(err));
                     return
                 }
                 if (results.rows.length === 0) {
-                    return res.status(401).send("Invalid Token");
+                    const myResponse = new responseModel("Some error occurred", {}, "Token not found");
+                    return res.status(404).send(myResponse.toJson());
                 }
                 userToken = results.rows[0].access_token.toString();
                 console.log(userToken)
                 if (token !== userToken) {
-                    return res.status(401).send("Invalid Token");
+                    const myResponse = new responseModel("Some error occurred", {}, "Invalid Token");
+                    return res.status(401).send(myResponse.toJson());
                 }
                 console.log(req.userTokenDecoded)
                 return next();
             });
     } catch (err) {
-        return res.status(401).send("Invalid Token");
+        console.log(err);
+        response.status(500).send(serverError(err));
     }
 };
 
@@ -51,6 +57,11 @@ function getToken(req) {
         return req.headers.authorization.split(" ")[1];
     }
     return null;
+}
+
+function serverError(err) {
+    const myResponse = new responseModel("Server Error", {}, err.toString());
+    return myResponse.toJson();
 }
 
 module.exports = verifyToken;
