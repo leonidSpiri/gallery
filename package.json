@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node main.js",
-    "start-express": "node app.js"
+    "start": "node --max-old-space-size=4076 main.js",
+    "start-express": "node --max-old-space-size=4076 app.js"
   },
   "keywords": [],
   "author": "Leonid Spiridonov",

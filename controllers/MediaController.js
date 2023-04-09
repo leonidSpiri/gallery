@@ -6,8 +6,8 @@ const resizeImg = require('resize-image-buffer');
 const responseModel = require('../models/ResponseModel');
 
 const minioClient = new Minio.Client({
-    endPoint: 'home-system.sknt.ru',
-    port: 2790,
+    endPoint: '192.168.1.2',//'home-system.sknt.ru',
+    port: 9000,//2790,
     useSSL: false,
     accessKey: 'minio123',
     secretKey: 'minio123'
@@ -17,8 +17,8 @@ const sql = new Pool({
     user: 'admin',
     database: 'gallery',
     password: 'root',
-    port: 271,
-    host: 'home-system.sknt.ru',
+    port: 5432,//271,
+    host: '192.168.1.2',//'home-system.sknt.ru'
 });
 
 //localhost:3000/upload
@@ -149,7 +149,7 @@ exports.upload = async function (req, response) {
                     "is_deleted": false
                 }
                 const myResponse = new responseModel(null, mediaJson, "Success");
-                response.status(200).json(myResponse.toJson());
+                response.status(200).json(myResponse.toJson()).end();
             })
         });
     });
@@ -211,7 +211,7 @@ exports.userPhotoList = async function (req, response) {
                     photosArray.push(json);
                 }
                 const myResponse = new responseModel(null, photosArray, "Success");
-                response.status(200).json(myResponse.toJson());
+                response.status(200).json(myResponse.toJson()).end();
             });
 
         });
@@ -232,8 +232,8 @@ exports.downloadPhoto = async function (req, response) {
         const bucketName = "user-" + req.userTokenDecoded.user_id;
         let data;
         minioClient.getObject(bucketName, req.query.fileName, function (err, objStream) {
-            if (err) {
-                response.status(500).send(serverError(err));
+                if (err) {
+                    response.status(500).send(serverError(err));
                     return console.log(err)
                 }
                 objStream.on('data', function (chunk) {
@@ -257,8 +257,7 @@ exports.downloadPhoto = async function (req, response) {
                     response.status(500).send(serverError(err));
                 })
             }
-        )
-        ;
+        );
     } catch
         (err) {
         console.log(err);

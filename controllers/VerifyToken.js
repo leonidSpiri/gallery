@@ -28,7 +28,7 @@ const verifyToken = async (req, res, next) => {
             async function (err, results) {
                 if (err) {
                     console.log(err);
-                    response.status(500).send(serverError(err));
+                    res.status(500).send(serverError(err));
                     return
                 }
                 if (results.rows.length === 0) {
@@ -46,7 +46,7 @@ const verifyToken = async (req, res, next) => {
             });
     } catch (err) {
         console.log(err);
-        response.status(500).send(serverError(err));
+        res.status(500).send(serverError(err));
     }
 };
 

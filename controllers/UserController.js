@@ -5,8 +5,8 @@ const {Pool} = require('pg');
 const responseModel = require('../models/ResponseModel');
 
 const minioClient = new Minio.Client({
-    endPoint: 'home-system.sknt.ru',
-    port: 2790,
+    endPoint: '192.168.1.2',//'home-system.sknt.ru',
+    port: 9000,//2790,
     useSSL: false,
     accessKey: 'minio123',
     secretKey: 'minio123'
@@ -16,8 +16,8 @@ const sql = new Pool({
     user: 'admin',
     database: 'gallery',
     password: 'root',
-    port: 271,
-    host: 'home-system.sknt.ru',
+    port: 5432,//271,
+    host: '192.168.1.2',//'home-system.sknt.ru'
 });
 
 //localhost:3000/users/refresh_token
