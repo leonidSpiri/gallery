@@ -232,7 +232,6 @@ exports.login = async function (request, response) {
                 } else {
                     console.log("User Not Exist. Please Register");
                     const myResponse = new responseModel("Some error occurred", {}, "User Not Exist");
-
                     response.status(404).send(myResponse.toJson())
                 }
             });

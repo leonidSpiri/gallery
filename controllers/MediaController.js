@@ -1,8 +1,9 @@
 const crypto = require('crypto');
 const Minio = require('minio');
 const {Pool} = require('pg');
-const exifImage = require('exif').ExifImage;
+const ExifImage = require('exif').ExifImage;
 const resizeImg = require('resize-image-buffer');
+const responseModel = require('../models/ResponseModel');
 
 const minioClient = new Minio.Client({
     endPoint: 'home-system.sknt.ru',
@@ -21,11 +22,11 @@ const sql = new Pool({
 });
 
 //localhost:3000/upload
-exports.upload = async function (req, res) {
+exports.upload = async function (req, response) {
     const bucketName = "user-" + req.userTokenDecoded.user_id
     await sql.connect()
     if (!req.files) {
-        res.status(404).send("File was not found");
+        response.status(404).send("File was not found");
         return;
     }
     const files = req.files;
@@ -35,7 +36,7 @@ exports.upload = async function (req, res) {
     await sql.query(requestAlbum, async function (err2, resultAlbum) {
         if (err2) {
             console.log(err2);
-            res.status(500).send("Server error");
+            response.status(500).send(serverError(err));
         }
         const album_id = resultAlbum.rows[0].album_id;
         const media_id = crypto.randomBytes(16).toString("hex");
@@ -46,7 +47,7 @@ exports.upload = async function (req, res) {
         let timestamp = Date.now();
         let original_camera_info = "";
         let description = "";
-        await new exifImage({image: files.file.data}, async function (error, exifData) {
+        await new ExifImage({image: files.file.data}, async function (error, exifData) {
             if (error)
                 console.log('Error: ' + error.message);
             else {
@@ -80,14 +81,14 @@ exports.upload = async function (req, res) {
                     }
                     if (original_date_created === undefined) {
                         console.log(original_date_created)
-                        return
+                    } else {
+                        const dateParts = original_date_created.split(/[ :]/);
+                        console.log(dateParts)
+                        const dateObj = new Date(
+                            Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], dateParts[3], dateParts[4], dateParts[5])
+                        );
+                        timestamp = dateObj.getTime();
                     }
-                    const dateParts = original_date_created.split(/[ :]/);
-                    console.log(dateParts)
-                    const dateObj = new Date(
-                        Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], dateParts[3], dateParts[4], dateParts[5])
-                    );
-                    timestamp = dateObj.getTime();
                 }
                 if (exifData.image !== undefined) {
                     original_camera_info = exifData.image.Make + " " + exifData.image.Model;
@@ -105,7 +106,7 @@ exports.upload = async function (req, res) {
             await sql.query(requestMedia, async function (err2) {
                 if (err2) {
                     console.log(err2);
-                    res.status(500).send("Server error");
+                    response.status(500).send(serverError(err));
                     return
                 }
 
@@ -113,21 +114,42 @@ exports.upload = async function (req, res) {
                 const requestMediaRelation = "insert into media_relation (media_id, album_id) values ('" + media_id + "', '" + album_id + "');";
                 console.log(requestMediaRelation)
 
-                await sql.query(requestMediaRelation, function (err2) {
+                await sql.query(requestMediaRelation, async function (err2) {
                     if (err2) {
                         console.log(err2);
-                        res.status(500).send("Server error");
+                        await sql.query("DELETE FROM media WHERE media_id = '" + media_id + "';", function (err2) {
+                        });
+                        response.status(500).send(serverError(err));
                         return
                     }
                 });
             });
-            minioClient.putObject(bucketName, file_location, files.file.data, files.file.size, media_type, function (err) {
+            minioClient.putObject(bucketName, file_location, files.file.data, files.file.size, media_type, async function (err) {
                 if (err) {
                     console.log(err)
-                    res.status(500).send("Server error");
+                    await sql.query("DELETE FROM media_relation WHERE media_id = '" + media_id + "';", function (err2) {
+                    });
+                    await sql.query("DELETE FROM media WHERE media_id = '" + media_id + "';", function (err2) {
+                    });
+                    response.status(500).send(serverError(err));
                     return
                 }
-                res.status(200).send("File uploaded successfully.")
+
+                let mediaJson = {
+                    "media_id": media_id,
+                    "album_id": album_id,
+                    "description": description,
+                    "file_location": file_location,
+                    "media_type": media_type,
+                    "date_created": timestamp,
+                    "geo_location": original_geo_location,
+                    "camera_info": original_camera_info,
+                    "original_name": original_name,
+                    "is_favourite": false,
+                    "is_deleted": false
+                }
+                const myResponse = new responseModel(null, mediaJson, "Success");
+                response.status(200).json(myResponse.toJson());
             })
         });
     });
@@ -135,7 +157,7 @@ exports.upload = async function (req, res) {
 
 
 //localhost:3000/users_photo_list/all
-exports.userPhotoList = async function (req, res) {
+exports.userPhotoList = async function (req, response) {
     try {
         const user_id = req.userTokenDecoded.user_id;
         const album = req.params["album"];
@@ -147,11 +169,12 @@ exports.userPhotoList = async function (req, res) {
         await sql.query(requestAlbum, async function (err, resultAlbum) {
             if (err) {
                 console.log(err);
-                res.status(500).send("Server error");
+                response.status(500).send(serverError(err));
                 return
             }
             if (resultAlbum.rows.length === 0) {
-                res.status(404).send("Not found");
+                const myResponse = new responseModel("Some error occurred", {}, "Not found");
+                response.status(404).send(myResponse.toJson())
                 return
             }
             const album_id = resultAlbum.rows[0].album_id;
@@ -163,11 +186,12 @@ exports.userPhotoList = async function (req, res) {
             await sql.query(requestMedia, function (err2, resultMedia) {
                 if (err2) {
                     console.log(err2);
-                    res.status(500).send("Server error");
+                    response.status(500).send(serverError(err));
                     return
                 }
                 if (resultMedia.rows.length === 0) {
-                    res.status(404).send("Not found");
+                    const myResponse = new responseModel("Some error occurred", {}, "Not found");
+                    response.status(404).send(myResponse.toJson())
                     return
                 }
                 for (let i = 0; i < resultMedia.rows.length; i++) {
@@ -186,19 +210,20 @@ exports.userPhotoList = async function (req, res) {
                     }
                     photosArray.push(json);
                 }
-                res.status(200).send(photosArray);
+                const myResponse = new responseModel(null, photosArray, "Success");
+                response.status(200).json(myResponse.toJson());
             });
 
         });
     } catch (err) {
         console.log(err);
-        res.status(500).send("Server error");
+        response.status(500).send(serverError(err));
     }
 }
 
 
 //localhost:3000/download_photo/thumbnail?fileName=photo.jpg
-exports.downloadPhoto = async function (req, res) {
+exports.downloadPhoto = async function (req, response) {
     try {
         let fullPhoto = true
         if (req.params["size"] === "thumbnail")
@@ -207,8 +232,8 @@ exports.downloadPhoto = async function (req, res) {
         const bucketName = "user-" + req.userTokenDecoded.user_id;
         let data;
         minioClient.getObject(bucketName, req.query.fileName, function (err, objStream) {
-                if (err) {
-                    res.status(500).send("Server error");
+            if (err) {
+                response.status(500).send(serverError(err));
                     return console.log(err)
                 }
                 objStream.on('data', function (chunk) {
@@ -220,17 +245,16 @@ exports.downloadPhoto = async function (req, res) {
                             const image = await resizeImg(data, {
                                 width: 200
                             });
-                            res.write(image);
-                            res.end();
+                            response.write(image);
+                            response.end();
                         })();
                     } else {
-                        res.write(data);
-                        res.end();
+                        response.write(data);
+                        response.end();
                     }
                 })
                 objStream.on('error', function (err) {
-                    res.status(500);
-                    res.send(err);
+                    response.status(500).send(serverError(err));
                 })
             }
         )
@@ -238,7 +262,7 @@ exports.downloadPhoto = async function (req, res) {
     } catch
         (err) {
         console.log(err);
-        res.status(500).send("Server error");
+        response.status(500).send(serverError(err));
     }
 }
 
@@ -247,4 +271,9 @@ function ConvertDMSToDD(degrees, minutes, seconds, direction) {
     if (direction === "S" || direction === "W")
         dd = dd * -1;
     return dd.toFixed(6);
+}
+
+function serverError(err) {
+    const myResponse = new responseModel("Server Error", {}, err.toString());
+    return myResponse.toJson();
 }

@@ -11,12 +11,13 @@ const sql = new Pool({
 });
 
 const verifyToken = async (req, res, next) => {
-    const token = getToken(req).toString();
+    let token = getToken(req)
     if (!token) {
         const myResponse = new responseModel("Some error occurred", null, "A token is required for authentication");
         res.status(403).send(myResponse.toJson());
         return
     }
+    token = token.toString();
     try {
         req.userTokenDecoded = jwt.verify(token, "secretKey");
 
