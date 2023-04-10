@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const {Pool} = require("pg");
 const responseModel = require('../models/ResponseModel');
 
-const sql = new Pool({
+const pool = new Pool({
     user: 'admin',
     database: 'gallery',
     password: 'root',
@@ -22,28 +22,35 @@ const verifyToken = async (req, res, next) => {
         req.userTokenDecoded = jwt.verify(token, "secretKey");
 
         let userToken;
-
-        await sql.connect()
-        await sql.query("SELECT access_token FROM users WHERE user_id ='" + req.userTokenDecoded.user_id + "';",
-            async function (err, results) {
-                if (err) {
-                    console.log(err);
-                    res.status(500).send(serverError(err));
-                    return
-                }
-                if (results.rows.length === 0) {
-                    const myResponse = new responseModel("Some error occurred", {}, "Token not found");
-                    return res.status(404).send(myResponse.toJson());
-                }
-                userToken = results.rows[0].access_token.toString();
-                console.log(userToken)
-                if (token !== userToken) {
-                    const myResponse = new responseModel("Some error occurred", {}, "Invalid Token");
-                    return res.status(401).send(myResponse.toJson());
-                }
-                console.log(req.userTokenDecoded)
-                return next();
-            });
+        pool.connect(function (err, sql, done) {
+            if (err) {
+                return console.error('connexion error', err);
+            }
+            sql.query("SELECT access_token FROM users WHERE user_id ='" + req.userTokenDecoded.user_id + "';",
+                async function (err, results) {
+                    if (err) {
+                        console.log(err);
+                        res.status(500).send(serverError(err));
+                        done()
+                        return
+                    }
+                    if (results.rows.length === 0) {
+                        const myResponse = new responseModel("Some error occurred", {}, "Token not found");
+                        done()
+                        return res.status(404).send(myResponse.toJson());
+                    }
+                    userToken = results.rows[0].access_token.toString();
+                    console.log(userToken)
+                    if (token !== userToken) {
+                        const myResponse = new responseModel("Some error occurred", {}, "Invalid Token");
+                        done()
+                        return res.status(401).send(myResponse.toJson());
+                    }
+                    console.log(req.userTokenDecoded)
+                    done()
+                    return next();
+                });
+        });
     } catch (err) {
         console.log(err);
         res.status(500).send(serverError(err));
