@@ -3,13 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <title>Main</title>
+
+    <style>
+        header {
+            background-color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .header-buttons {
+            display: flex;
+        }
+
+        .header-buttons a {
+            color: #666;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .header-buttons a:hover {
+            color: #000;
+        }
+
+        #photoTable {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 100px;
+        }
+
+        #photoTable td {
+            border: none;
+            vertical-align: top;
+        }
+
+        @media screen and (min-width: 601px) {
+            #photoTable td {
+                width: calc(100% / 3);
+                padding: 10px;
+            }
+
+            #photoTable td:last-child {
+                border-right: none;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            #photoTable td {
+                width: calc(100% / 2);
+                padding: 5px;
+            }
+
+            #photoTable td:last-child {
+                border-bottom: none;
+            }
+        }
+
+        @media screen and (max-width: 400px) {
+            #photoTable td {
+                width: 100%;
+            }
+        }
+
+        img {
+            max-width: 450px;
+            object-fit: contain;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        td, th {
+            border: none;
+        }
+    </style>
+
 </head>
 <body>
-<h1>Main</h1>
-<p>Main page</p>
-<a href="http://localhost:3000/about.html">About</a>
-<a href="http://localhost:3000/static/user/registration.html">Registration</a>
-<a href="http://localhost:3000/static/user/login.html">Login</a>
-<a href="http://localhost:3000/user/profile.html">Profile</a>
+
+
+<header>
+    <div class="header-buttons">
+        <a href="/about">About</a>
+        <a href="/registration">Registration</a>
+        <a href="/login">Login</a>
+        <a href="/profile">Profile</a>
+    </div>
+</header>
+
+<table id="photoTable">
+    <tbody></tbody>
+</table>
+
+<script>
+
+
+    let request = new XMLHttpRequest();
+    request.open("POST", "/media/media_list/all", true);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.setRequestHeader("Authorization", "Bearer " +
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiN2FmYmEyYjYtNTg3ZS00MWJmLWFlNTQtYTU3ZWY1NWJiMjJhIiwidXNlckVtYWlsIjoiZW1haWwxQG1haWwuY29tIiwiaWF0IjoxNjgxNTkxMTk4LCJleHAiOjE2ODI0NTUxOTh9.Tglg_WSx8tbhNkibbJPSFXo-MusSoUbTnND4NP4z65Y");
+    request.addEventListener("load", function () {
+        console.log(request.response)
+    });
+    request.send();
+
+
+
+
+
+
+
+
+    // Создаем массив с ссылками на фотографии
+    const photoLinks = [
+        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
+        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
+        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
+        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
+        "https://mykaleidoscope.ru/x/uploads/posts/2022-09/1663115165_57-mykaleidoscope-ru-p-zlaya-kapibara-krasivo-63.jpg",
+        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
+        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
+        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
+        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
+        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
+        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
+        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
+        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
+        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
+        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
+        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
+        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
+        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
+        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
+        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
+        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg"
+    ];
+
+    const photoTable = document.getElementById("photoTable").querySelector("tbody");
+
+    const addPhoto = (imageUrl) => {
+        const lastRow = photoTable.lastChild;
+        let newRow = null;
+
+        if (!lastRow || lastRow.childNodes.length >= getColumnsCount()) {
+            newRow = document.createElement("tr");
+            photoTable.appendChild(newRow);
+        } else {
+            newRow = lastRow;
+        }
+
+        const imageCell = document.createElement("td");
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        //<img src="data:image/png;base64,{{ image_data }}" alt="Фотография">
+        imageCell.appendChild(image);
+        newRow.appendChild(imageCell);
+    };
+
+    const getColumnsCount = () => {
+        const width = window.innerWidth;
+        if (width <= 500)
+            return 1;
+        else if (width <= 1000)
+            return 2;
+        else if (width <= 1400)
+            return 3;
+        else
+            return 4;
+    };
+
+    window.addEventListener("resize", () => {
+        const columnsCount = getColumnsCount();
+        const rows = Array.from(photoTable.querySelectorAll("tr"));
+
+        rows.forEach(row => {
+            if (row.childNodes.length > columnsCount) {
+                while (row.childNodes.length > columnsCount) {
+                    const lastCell = row.lastChild;
+                    row.removeChild(lastCell);
+                    const newLastRow = document.createElement("tr");
+                    const newLastCell = document.createElement("td");
+                    newLastCell.appendChild(lastCell.firstChild);
+                    newLastRow.appendChild(newLastCell);
+                    photoTable.insertBefore(newLastRow, row.nextSibling);
+                }
+            } else if (row.childNodes.length < columnsCount) {
+                while (row.childNodes.length < columnsCount) {
+                    const newCell = document.createElement("td");
+                    row.appendChild(newCell);
+                }
+            }
+        });
+    });
+
+
+    // Добавляем каждую фотографию в таблицу
+    for (let i = 0; i < photoLinks.length; i++) {
+        const photoLink = photoLinks[i];
+        addPhoto(photoLink);
+    }
+
+</script>
 </body>
 </html>

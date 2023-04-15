@@ -190,14 +190,16 @@ exports.login = async function (request, response) {
         response.status(400).send(myResponse.toJson());
         return
     }
-    let userEmail = request.body.userEmail.toString();
-    let password = request.body.userPassword.toString();
+    var userEmail = request.body.userEmail;
+    let password = request.body.userPassword;
     if ((userEmail === '' || password === '') || (userEmail === undefined || password === undefined)) {
         const myResponse = new responseModel("Some error occurred", {}, "All input is required");
         response.status(400).send(myResponse.toJson());
         console.log(myResponse.toJson());
         return
     }
+    userEmail = userEmail.toString();
+    password = password.toString();
     try {
         pool.connect(function (err, sql, done) {
             if (err) {
