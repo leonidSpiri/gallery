@@ -11,7 +11,7 @@
             text-align: center;
             position: fixed;
             top: 0;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -68,14 +68,16 @@
             }
         }
 
-        @media screen and (max-width: 400px) {
+        @media screen and (max-width: 450px) {
             #photoTable td {
-                width: 100%;
+                width: 450px;
+                height: 450px;
             }
         }
 
         img {
-            max-width: 450px;
+            width: 450px;
+            height: 450px;
             object-fit: contain;
         }
 
@@ -106,49 +108,68 @@
 </table>
 
 <script>
+    class Media {
+        constructor(media_id, album_id, description, file_location, media_type, date_created, geo_location, camera_info, is_favourite, is_deleted, original_name) {
+            this.media_id = media_id;
+            this.album_id = album_id;
+            this.description = description;
+            this.file_location = file_location;
+            this.media_type = media_type;
+            this.date_created = date_created;
+            this.geo_location = geo_location;
+            this.camera_info = camera_info;
+            this.original_name = original_name;
+            this.is_favourite = is_favourite;
+            this.is_deleted = is_deleted;
+        }
+    }
 
+    const token = "Bearer " +
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiN2FmYmEyYjYtNTg3ZS00MWJmLWFlNTQtYTU3ZWY1NWJiMjJhIiwidXNlckVtYWlsIjoiZW1haWwxQG1haWwuY29tIiwiaWF0IjoxNjgxNjUzODgzLCJleHAiOjE2ODI1MTc4ODN9.euToH5qnPdKdpGsrL2FxiM97DEGWhn0q-C0GeuQENWI";
 
     let request = new XMLHttpRequest();
     request.open("POST", "/media/media_list/all", true);
-    request.setRequestHeader("Content-Type", "application/json");
-    request.setRequestHeader("Authorization", "Bearer " +
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiN2FmYmEyYjYtNTg3ZS00MWJmLWFlNTQtYTU3ZWY1NWJiMjJhIiwidXNlckVtYWlsIjoiZW1haWwxQG1haWwuY29tIiwiaWF0IjoxNjgxNTkxMTk4LCJleHAiOjE2ODI0NTUxOTh9.Tglg_WSx8tbhNkibbJPSFXo-MusSoUbTnND4NP4z65Y");
+    request.setRequestHeader("Authorization", token);
     request.addEventListener("load", function () {
-        console.log(request.response)
+        let response = request.response;
+        if (response) {
+            const parsedResponse = JSON.parse(response);
+            const mediaArray = parsedResponse.data.map(mediaData => {
+                return new Media(
+                    mediaData.media_id,
+                    mediaData.album_id,
+                    mediaData.description,
+                    mediaData.file_location,
+                    mediaData.media_type,
+                    mediaData.date_created,
+                    mediaData.geo_location,
+                    mediaData.camera_info,
+                    mediaData.is_favourite,
+                    mediaData.is_deleted,
+                    mediaData.original_name
+                );
+            });
+
+            for (let i = 0; i < mediaArray.length; i++) {
+                const media = mediaArray[i].file_location.toString();
+                let reqGetMedia = new XMLHttpRequest();
+                reqGetMedia.open("GET", "/media/download_media/full/base?fileName=" + media, true);
+                reqGetMedia.setRequestHeader("Authorization", token);
+                reqGetMedia.addEventListener("load", function () {
+                    let response = reqGetMedia.response;
+                    const parsedResponse = JSON.parse(response);
+                    const baseString = parsedResponse.data
+                    addPhoto(baseString);
+                });
+                reqGetMedia.send();
+
+
+            }
+        } else {
+            console.error("Invalid response data.");
+        }
     });
     request.send();
-
-
-
-
-
-
-
-
-    // Создаем массив с ссылками на фотографии
-    const photoLinks = [
-        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
-        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
-        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
-        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
-        "https://mykaleidoscope.ru/x/uploads/posts/2022-09/1663115165_57-mykaleidoscope-ru-p-zlaya-kapibara-krasivo-63.jpg",
-        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
-        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
-        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
-        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
-        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
-        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
-        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
-        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
-        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
-        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
-        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
-        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg",
-        "https://phonoteka.org/uploads/posts/2023-02/1675364268_phonoteka-org-p-oboi-kapibara-instagram-25.jpg",
-        "https://zverek.org/wp-content/uploads/2023/01/7.jpg",
-        "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-34ef9e02-502d-4727-860a-b4cdf244af13",
-        "https://i.pinimg.com/originals/be/7d/31/be7d314e7a75bc1530d0c3c141db7ab2.jpg"
-    ];
 
     const photoTable = document.getElementById("photoTable").querySelector("tbody");
 
@@ -165,8 +186,7 @@
 
         const imageCell = document.createElement("td");
         const image = document.createElement("img");
-        image.src = imageUrl;
-        //<img src="data:image/png;base64,{{ image_data }}" alt="Фотография">
+        image.src = "data:image/jpg;base64, " + imageUrl;
         imageCell.appendChild(image);
         newRow.appendChild(imageCell);
     };
@@ -206,13 +226,6 @@
             }
         });
     });
-
-
-    // Добавляем каждую фотографию в таблицу
-    for (let i = 0; i < photoLinks.length; i++) {
-        const photoLink = photoLinks[i];
-        addPhoto(photoLink);
-    }
 
 </script>
 </body>

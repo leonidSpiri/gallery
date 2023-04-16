@@ -249,7 +249,7 @@ exports.userPhotoList = async function (req, response) {
 }
 
 
-//localhost:3000/download_photo/thumbnail?fileName=photo.jpg
+//localhost:3000/download_photo/thumbnail/base?fileName=photo.jpg
 exports.downloadPhoto = async function (req, response) {
     try {
         pool.connect(function (err, sql, done) {
@@ -259,6 +259,10 @@ exports.downloadPhoto = async function (req, response) {
             let fullPhoto = true
             if (req.params["size"] === "thumbnail")
                 fullPhoto = false;
+
+            let inBase = true
+            if (req.params["type"] !== "base")
+                inBase = false;
 
             const bucketName = "user-" + req.userTokenDecoded.user_id;
             let data;
@@ -277,11 +281,21 @@ exports.downloadPhoto = async function (req, response) {
                                 const image = await resizeImg(data, {
                                     width: 130
                                 });
-                                response.write(image);
+                                if (inBase) {
+                                    const base64 = image.toString('base64');
+                                    const myResponse = new responseModel(null, base64, "Success");
+                                    response.status(200).json(myResponse.toJson())
+                                } else
+                                    response.write(image);
                                 response.end();
                             })();
                         } else {
-                            response.write(data);
+                            if (inBase) {
+                                const base64 = data.toString('base64');
+                                const myResponse = new responseModel(null, base64, "Success");
+                                response.status(200).json(myResponse.toJson())
+                            } else
+                                response.write(data);
                             response.end();
                         }
                     })
