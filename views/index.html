@@ -11,7 +11,7 @@
             text-align: center;
             position: fixed;
             top: 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -151,15 +151,16 @@
             });
 
             for (let i = 0; i < mediaArray.length; i++) {
-                const media = mediaArray[i].file_location.toString();
+                const file_location = mediaArray[i].file_location.toString();
+                const mediaId = mediaArray[i].media_id.toString();
                 let reqGetMedia = new XMLHttpRequest();
-                reqGetMedia.open("GET", "/media/download_media/full/base?fileName=" + media, true);
+                reqGetMedia.open("GET", "/media/download_media/full/base?fileName=" + file_location, true);
                 reqGetMedia.setRequestHeader("Authorization", token);
                 reqGetMedia.addEventListener("load", function () {
                     let response = reqGetMedia.response;
                     const parsedResponse = JSON.parse(response);
                     const baseString = parsedResponse.data
-                    addPhoto(baseString);
+                    addPhoto(baseString, mediaId);
                 });
                 reqGetMedia.send();
 
@@ -173,7 +174,7 @@
 
     const photoTable = document.getElementById("photoTable").querySelector("tbody");
 
-    const addPhoto = (imageUrl) => {
+    const addPhoto = (imageUrl, media_id) => {
         const lastRow = photoTable.lastChild;
         let newRow = null;
 
@@ -187,8 +188,13 @@
         const imageCell = document.createElement("td");
         const image = document.createElement("img");
         image.src = "data:image/jpg;base64, " + imageUrl;
+        image.id = media_id;
         imageCell.appendChild(image);
         newRow.appendChild(imageCell);
+        document.getElementById(media_id).addEventListener("click", function (e) {
+            e.preventDefault();
+            console.log("click on image with id: " + media_id);
+        });
     };
 
     const getColumnsCount = () => {
@@ -226,6 +232,7 @@
             }
         });
     });
+
 
 </script>
 </body>

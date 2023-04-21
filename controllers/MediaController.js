@@ -269,7 +269,6 @@ exports.downloadPhoto = async function (req, response) {
             minioClient.getObject(bucketName, req.query.fileName, function (err, objStream) {
                     if (err) {
                         response.status(500).send(serverError(err));
-                        done()
                         return console.log(err)
                     }
                     objStream.on('data', function (chunk) {

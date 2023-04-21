@@ -20,8 +20,8 @@ const verifyToken = async (req, res, next) => {
     token = token.toString();
     try {
         req.userTokenDecoded = jwt.verify(token, "secretKey");
-
         let userToken;
+        return next();
         pool.connect(function (err, sql, done) {
             if (err) {
                 return console.error('connexion error', err);
