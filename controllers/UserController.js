@@ -5,7 +5,7 @@ const {Pool} = require('pg');
 const responseModel = require('../models/ResponseModel');
 
 const minioClient = new Minio.Client({
-    endPoint: '192.168.1.2',//'home-system.sknt.ru',
+    endPoint: 'fs',//'home-system.sknt.ru',
     port: 9000,//2790,
     useSSL: false,
     accessKey: 'minio123',
@@ -17,7 +17,7 @@ const pool = new Pool({
     database: 'gallery',
     password: 'root',
     port: 5432,//271,
-    host: '192.168.1.2',//'home-system.sknt.ru'
+    host: 'db',//'home-system.sknt.ru'
 });
 
 //localhost:3000/users/refresh_token
@@ -122,7 +122,7 @@ exports.registration = async function (request, response) {
                     let user = {
                         user_id: user_id,
                         email: userEmail,
-                        userName: userName,
+                        username: userName,
                     }
                     const album_id = crypto.randomBytes(16).toString("hex");
                     const passwordHash = crypto.createHash('md5').update(password).digest('hex');
@@ -140,7 +140,7 @@ exports.registration = async function (request, response) {
 
                     const requestUser = "insert into users (user_id, email, password_hash, username, date_created, access_token) values ('" + user_id + "', '" + userEmail.toString() + "', '" + passwordHash + "', '" + userName.toString() + "', '" + dateCreated + "', '" + accessToken + "');";
                     console.log(requestUser)
-                    await sql.query(requestUser, async function (err) {
+                    sql.query(requestUser, async function (err) {
                         if (err) {
                             console.log(err);
                             response.status(500).send(serverError(err));
@@ -148,11 +148,11 @@ exports.registration = async function (request, response) {
                         }
                     });
                     const bucketName = "user-" + user_id
-                    await minioClient.makeBucket(bucketName, async function (err2) {
+                    minioClient.makeBucket(bucketName, async function (err2) {
                         if (err2) {
                             console.log("error on creating bucket", err2);
                             const requestDeleteUser = "delete from users where user_id = '" + user_id + "';";
-                            await sql.query(requestDeleteUser, function (err3) {
+                            sql.query(requestDeleteUser, function (err3) {
                                 response.status(500).send(serverError(err2));
                                 done()
                             });
@@ -163,7 +163,7 @@ exports.registration = async function (request, response) {
 
                     const requestAlbum = "insert into album (album_id, user_id, description, avatar_location) values ('" + album_id + "', '" + user_id + "', 'all', '/');";
                     console.log(requestAlbum)
-                    await sql.query(requestAlbum, function (err2) {
+                    sql.query(requestAlbum, function (err2) {
                         if (err2) {
                             console.log(err2);
                             response.status(500).send(serverError(err2));

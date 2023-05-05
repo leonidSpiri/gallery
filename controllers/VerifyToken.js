@@ -7,7 +7,7 @@ const pool = new Pool({
     database: 'gallery',
     password: 'root',
     port: 271,
-    host: 'home-system.sknt.ru',
+    host: 'db',
 });
 
 const verifyToken = async (req, res, next) => {

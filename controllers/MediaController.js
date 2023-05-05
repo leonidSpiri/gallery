@@ -6,7 +6,7 @@ const resizeImg = require('resize-image-buffer');
 const responseModel = require('../models/ResponseModel');
 
 const minioClient = new Minio.Client({
-    endPoint: '192.168.1.2',//'home-system.sknt.ru',
+    endPoint: 'fs',//'home-system.sknt.ru',
     port: 9000,//2790,
     useSSL: false,
     accessKey: 'minio123',
@@ -18,7 +18,7 @@ const pool = new Pool({
     database: 'gallery',
     password: 'root',
     port: 5432,//271,
-    host: '192.168.1.2',//'home-system.sknt.ru'
+    host: 'db',//'home-system.sknt.ru'
 });
 
 //localhost:3000/upload
