@@ -1,5 +1,5 @@
 const express = require("express");
-const viewController = require("../controllers/ViewController.js");
+const viewController = require("../controllers/ViewController");
 const viewRouter = express.Router();
 
 viewRouter.use("/about", viewController.about);

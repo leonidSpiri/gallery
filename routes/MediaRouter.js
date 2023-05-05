@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require('../controllers/VerifyToken');
-const mediaController = require("../controllers/MediaController.js");
+const mediaController = require("../controllers/MediaController");
 const mediaRouter = express.Router();
 
 mediaRouter.use("/media_list/:album", verifyToken, mediaController.userPhotoList);

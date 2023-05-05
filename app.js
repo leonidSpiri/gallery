@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 let busboy = require('connect-busboy');
 const fileUpload = require('express-fileupload');
-const userRouter = require("./routes/UserRouter.js");
-const mediaRouter = require("./routes/MediaRouter.js");
-const viewRouter = require("./routes/ViewRouter.js");
+const userRouter = require("./routes/UserRouter");
+const mediaRouter = require("./routes/MediaRouter");
+const viewRouter = require("./routes/ViewRouter");
 
 module.exports = app;
 app.use(busboy());

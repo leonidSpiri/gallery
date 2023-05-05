@@ -1,7 +1,7 @@
 const express = require("express");
 const jsonParser = express.json();
 const verifyToken = require('../controllers/VerifyToken');
-const userController = require("../controllers/userController.js");
+const userController = require("../controllers/UserController");
 const userRouter = express.Router();
 
 userRouter.use("/registration", jsonParser, userController.registration);
