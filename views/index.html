@@ -124,9 +124,8 @@
         }
     }
 
-    const token = "Bearer " +
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiN2FmYmEyYjYtNTg3ZS00MWJmLWFlNTQtYTU3ZWY1NWJiMjJhIiwidXNlckVtYWlsIjoiZW1haWwxQG1haWwuY29tIiwiaWF0IjoxNjgxNjUzODgzLCJleHAiOjE2ODI1MTc4ODN9.euToH5qnPdKdpGsrL2FxiM97DEGWhn0q-C0GeuQENWI";
-
+    const token = "Bearer " + localStorage.getItem("accessToken")
+    console.log("token = " + token)
     let request = new XMLHttpRequest();
     request.open("POST", "/media/media_list/all", true);
     request.setRequestHeader("Authorization", token);
@@ -203,7 +202,7 @@
             return 1;
         else if (width <= 1000)
             return 2;
-        else if (width <= 1400)
+        else if (width <= 1700)
             return 3;
         else
             return 4;

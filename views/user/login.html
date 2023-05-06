@@ -29,6 +29,8 @@
         request.setRequestHeader("Content-Type", "application/json");
         request.addEventListener("load", function () {
             document.getElementById("demo").innerHTML = request.response;
+            const responseBody = JSON.parse(request.response);
+            localStorage.setItem("accessToken", responseBody.data.access_token)
         });
         request.send(user);
     });
