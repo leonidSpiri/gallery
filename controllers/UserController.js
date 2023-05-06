@@ -1,24 +1,8 @@
 const crypto = require('crypto');
 const jwt = require("jsonwebtoken");
-const Minio = require('minio');
-const {Pool} = require('pg');
 const responseModel = require('../models/ResponseModel');
-
-const minioClient = new Minio.Client({
-    endPoint: 'fs',//'home-system.sknt.ru',
-    port: 9000,//2790,
-    useSSL: false,
-    accessKey: 'minio123',
-    secretKey: 'minio123'
-});
-
-const pool = new Pool({
-    user: 'admin',
-    database: 'gallery',
-    password: 'root',
-    port: 5432,//271,
-    host: 'db',//'home-system.sknt.ru'
-});
+const minioClient = require('../config/AppConfig').minioClient;
+const pool = require('../config/AppConfig').pool;
 
 //localhost:3000/users/refresh_token
 exports.refreshToken = async function (request, response) {

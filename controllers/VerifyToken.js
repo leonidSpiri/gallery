@@ -1,14 +1,6 @@
 const jwt = require("jsonwebtoken");
-const {Pool} = require("pg");
 const responseModel = require('../models/ResponseModel');
-
-const pool = new Pool({
-    user: 'admin',
-    database: 'gallery',
-    password: 'root',
-    port: 271,
-    host: 'db',
-});
+const pool = require('../config/AppConfig').pool;
 
 const verifyToken = async (req, res, next) => {
     let token = getToken(req)

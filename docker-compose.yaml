@@ -7,6 +7,7 @@ services:
       - "3000:3000"
     container_name: gallery
     restart: unless-stopped
+    env_file: .env
     depends_on:
       - db
       - fs
@@ -18,10 +19,7 @@ services:
     restart: unless-stopped
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_DB=gallery
-      - POSTGRES_PASSWORD=root
+    env_file: .env
     volumes:
       - db_gallery_vol:/var/lib/postgresql/data/
       - ./dump:/docker-entrypoint-initdb.d
@@ -34,7 +32,7 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - db_gallery_vol:/var/lib/minio/data/
+      - fs_gallery_vol:/data
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
     expose:
@@ -55,6 +53,7 @@ services:
 
 volumes:
   db_gallery_vol: { }
+  fs_gallery_vol: { }
 
 networks:
   internal_net:
