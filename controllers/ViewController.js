@@ -15,6 +15,11 @@ exports.registration = function (req, res) {
     res.sendFile(path.join(__dirname, '../views/user/registration.html'));
 }
 
+//localhost:3000/profile
+exports.profile = function (req, res) {
+    res.sendFile(path.join(__dirname, '../views/user/profile.html'));
+}
+
 //localhost:3000/about
 exports.about = function (request, response) {
     let text = '{"about":"About page"}';

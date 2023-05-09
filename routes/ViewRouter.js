@@ -5,6 +5,7 @@ const viewRouter = express.Router();
 viewRouter.use("/about", viewController.about);
 viewRouter.use("/login", viewController.login);
 viewRouter.use("/registration", viewController.registration);
+viewRouter.use("/profile", viewController.profile);
 viewRouter.use("/", viewController.home);
 
 module.exports = viewRouter;

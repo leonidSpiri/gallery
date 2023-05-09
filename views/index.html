@@ -96,10 +96,9 @@
 
 <header>
     <div class="header-buttons">
-        <a href="/about">About</a>
-        <a href="/registration">Registration</a>
-        <a href="/login">Login</a>
+        <a href="/">Main</a>
         <a href="/profile">Profile</a>
+        <a href="/about">About</a>
     </div>
 </header>
 
@@ -125,6 +124,9 @@
     }
 
     const token = "Bearer " + localStorage.getItem("accessToken")
+    if (token === "Bearer null" || token === "Bearer undefined" || token === "Bearer ") {
+        window.location.href = "/login";
+    }
     console.log("token = " + token)
     let request = new XMLHttpRequest();
     request.open("POST", "/media/media_list/all", true);

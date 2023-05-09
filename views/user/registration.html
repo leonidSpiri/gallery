@@ -5,12 +5,12 @@
     <meta charset="utf-8"/>
 </head>
 <body>
-<h1>Введите данные</h1>
+<h1>Регистрация</h1>
 <form name="registerForm">
     <label>Имя</label></br>
     <input type="text" name="userName"/></br></br>
-    <label>Возраст</label></br>
-    <input type="number" name="userAge"/></br></br>
+    <label>Почта</label></br>
+    <input name="userEmail" type="email"/></br></br>
     <label>Пароль</label></br>
     <input type="password" name="userPassword"/></br></br>
     <button type="submit" id="submit_btn">Отправить</button>
@@ -23,16 +23,20 @@
         // получаем данные формы
         let registerForm = document.forms["registerForm"];
         let userName = registerForm.elements["userName"].value;
-        let userAge = registerForm.elements["userAge"].value;
+        let userEmail = registerForm.elements["userEmail"].value;
         let userPassword = registerForm.elements["userPassword"].value;
         // сериализуем данные в json
-        let user = JSON.stringify({userName: userName, userAge: userAge, userPassword: userPassword});
+        let user = JSON.stringify({userName: userName, userEmail: userEmail, userPassword: userPassword});
         let request = new XMLHttpRequest();
-        request.open("POST", "/user/registration", true);
+        request.open("POST", "/users/registration", true);
         request.setRequestHeader("Content-Type", "application/json");
         request.addEventListener("load", function () {
-            let receivedUser = JSON.parse(request.response);
-            document.getElementById("demo").innerHTML = receivedUser.userName + " - " + receivedUser.accessToken + " - " + receivedUser.userAge;
+            const responseBody = JSON.parse(request.response);
+            document.getElementById("demo").innerHTML = responseBody;
+            localStorage.setItem("accessToken", responseBody.data.access_token)
+            localStorage.setItem("email", responseBody.data.email)
+            localStorage.setItem("username", responseBody.data.username)
+            window.location.href = "/"
         });
         request.send(user);
     });
