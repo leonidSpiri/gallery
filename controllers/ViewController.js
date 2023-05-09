@@ -20,9 +20,7 @@ exports.profile = function (req, res) {
     res.sendFile(path.join(__dirname, '../views/user/profile.html'));
 }
 
-//localhost:3000/about
-exports.about = function (request, response) {
-    let text = '{"about":"About page"}';
-    let json = JSON.parse(text);
-    response.json(json);
+//localhost:3000/add_media
+exports.add_media = function (req, res) {
+    res.sendFile(path.join(__dirname, '../views/add_media.html'));
 }

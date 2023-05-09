@@ -5,7 +5,7 @@ const responseModel = require('../models/ResponseModel');
 const minioClient = require('../config/AppConfig').minioClient;
 const pool = require('../config/AppConfig').pool;
 
-//localhost:3000/upload
+//localhost:3000/media/upload_media
 exports.upload = async function (req, response) {
     try {
         const bucketName = "user-" + req.userTokenDecoded.user_id

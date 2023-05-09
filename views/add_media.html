@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add media</title>
+    <style>
+        header {
+            background-color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .header-buttons {
+            display: flex;
+        }
+
+        .header-buttons a {
+            color: #666;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .header-buttons a:hover {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+
+<header>
+    <div class="header-buttons">
+        <a href="/">Main</a>
+        <a href="/profile">Profile</a>
+        <a href="/add_media">Add media</a>
+    </div>
+</header>
+
+<div style="margin-top: 100px">
+    <form action="/add_media" enctype="multipart/form-data" method="post">
+        <input alt="image" id="file" name="file" type="file">
+        <input id="upload" type="submit" value="Загрузить">
+    </form>
+</div>
+
+
+<script>
+    document.getElementById("upload").addEventListener("click", function (e) {
+        e.preventDefault();
+        const token = "Bearer " + localStorage.getItem("accessToken")
+        if (token === "Bearer null" || token === "Bearer undefined" || token === "Bearer ") {
+            window.location.href = "/login";
+        }
+        const file = document.getElementById("file").files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+
+        let request = new XMLHttpRequest();
+        request.open("POST", "/media/upload_media", true);
+        request.setRequestHeader("Authorization", token);
+        request.addEventListener("load", function () {
+            const responseBody = JSON.parse(request.response);
+            console.log(responseBody);
+            console.log(responseBody.message);
+            if (responseBody.message === "Success") {
+                alert("Файл загружен");
+                window.location.href = "/";
+            } else {
+                alert("Ошибка загрузки файла");
+            }
+        });
+
+        request.send(formData);
+        document.getElementById("upload").disabled = true;
+    });
+
+</script>
+</body>
+</html>
