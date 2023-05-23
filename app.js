@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 let busboy = require('connect-busboy');
 const fileUpload = require('express-fileupload');
+const createTables = require('./dump/createTable');
 const userRouter = require("./routes/UserRouter");
 const mediaRouter = require("./routes/MediaRouter");
 const viewRouter = require("./routes/ViewRouter");
@@ -21,6 +22,7 @@ app.use(express.urlencoded({extended: true}));
     try {
         app.listen(3000);
         console.log("Сервер ожидает подключения...");
+        await createTables()
     } catch (err) {
         return console.log(err);
     }

@@ -1,39 +1,100 @@
-CREATE TABLE "users"
+CREATE TABLE IF NOT EXISTS "users"
 (
-    user_id       varchar(255) PRIMARY KEY,
-    email         varchar(255),
-    password_hash varchar(255),
-    username      varchar(255),
-    date_created  varchar(255),
-    access_token  varchar(255)
-);
+    user_id varchar
+(
+    255
+) PRIMARY KEY,
+    email varchar
+(
+    255
+),
+    password_hash varchar
+(
+    255
+),
+    username varchar
+(
+    255
+),
+    date_created varchar
+(
+    255
+),
+    access_token varchar
+(
+    255
+)
+    );
 
-CREATE TABLE album
+CREATE TABLE IF NOT EXISTS album
 (
-    album_id        varchar(255) PRIMARY KEY,
-    user_id         varchar(255),
-    description     varchar(255),
-    avatar_location varchar(255)
-);
+    album_id varchar
+(
+    255
+) PRIMARY KEY,
+    user_id varchar
+(
+    255
+),
+    description varchar
+(
+    255
+),
+    avatar_location varchar
+(
+    255
+)
+    );
 
-CREATE TABLE media_relation
+CREATE TABLE IF NOT EXISTS media_relation
 (
-    id       BIGSERIAL PRIMARY KEY,
-    album_id varchar(255),
-    media_id varchar(255)
-);
+    id
+    BIGSERIAL
+    PRIMARY
+    KEY,
+    album_id
+    varchar
+(
+    255
+),
+    media_id varchar
+(
+    255
+)
+    );
 
-CREATE TABLE media
+CREATE TABLE IF NOT EXISTS media
 (
-    media_id      varchar(255) PRIMARY KEY,
-    file_location varchar(255),
-    description   text,
-    media_type    varchar(255),
-    date_created  varchar(255),
-    geo_location  varchar(255),
-    camera_info   varchar(255),
-    original_name varchar(255),
-    is_favourite  bool,
+    media_id varchar
+(
+    255
+) PRIMARY KEY,
+    file_location varchar
+(
+    255
+),
+    description text,
+    media_type varchar
+(
+    255
+),
+    date_created varchar
+(
+    255
+),
+    geo_location varchar
+(
+    255
+),
+    camera_info varchar
+(
+    255
+),
+    original_name varchar
+(
+    255
+),
+    is_favourite bool,
     is_deleted    bool
 );
 

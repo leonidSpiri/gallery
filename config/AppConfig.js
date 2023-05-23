@@ -1,16 +1,16 @@
 const Minio = require('minio');
 const {Pool} = require('pg');
 
-const DB_HOST = process.env.DB_HOST || 'home-system.sknt.ru';
-const DB_PORT = parseInt(process.env.DB_PORT) || 271;
+const DB_HOST = process.env.DB_HOST || '10.34.64.153';
+const DB_PORT = parseInt(process.env.DB_PORT) || 5432;
 const POSTGRES_USER = process.env.POSTGRES_USER || 'admin';
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || 'root';
 const POSTGRES_DB = process.env.POSTGRES_DB || 'gallery';
 
 const MINIO_ROOT_USER = process.env.MINIO_ROOT_USER || 'minio123';
 const MINIO_ROOT_PASSWORD = process.env.MINIO_ROOT_PASSWORD || 'minio123';
-const MINIO_HOST = process.env.MINIO_HOST || 'home-system.sknt.ru';
-const MINIO_PORT = parseInt(process.env.MINIO_PORT) || 2790;
+const MINIO_HOST = process.env.MINIO_HOST || '10.34.64.153';
+const MINIO_PORT = parseInt(process.env.MINIO_PORT) || 9000;
 
 const minioClient = new Minio.Client({
     endPoint: MINIO_HOST,
