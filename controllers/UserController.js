@@ -10,7 +10,8 @@ exports.refreshToken = async function (request, response) {
     try {
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
 
             sql.query("select * from users where user_id = '" + user_id + "';",
@@ -35,7 +36,7 @@ exports.refreshToken = async function (request, response) {
                         {user_id: user.user_id, userEmail: user.email.toString()},
                         "secretKey",
                         {
-                            expiresIn: "10d",
+                            expiresIn: "1000d",
                         }
                     );
                     user.access_token = accessToken;
@@ -82,7 +83,8 @@ exports.registration = async function (request, response) {
 
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
             sql.query("select * from users where email = '" + userEmail + "';",
                 async function (err, results) {
@@ -115,7 +117,7 @@ exports.registration = async function (request, response) {
                         {user_id: user_id, userEmail: userEmail.toString()},
                         "secretKey",
                         {
-                            expiresIn: "10d",
+                            expiresIn: "1000d",
                         }
                     );
                     user.access_token = accessToken;
@@ -187,64 +189,65 @@ exports.login = async function (request, response) {
     try {
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
-            }
-            sql.query("select * from users where email = '" + userEmail + "';",
-                async function (err, results) {
-                    if (err) {
-                        console.log(err);
-                        response.status(500).send(serverError(err));
-                        done()
-                        return
-                    }
-
-                    if (results.rowCount === 1) {
-                        const user = {
-                            user_id: results.rows[0].user_id,
-                            email: results.rows[0].email.toString(),
-                            password_hash: results.rows[0].password_hash,
-                            username: results.rows[0].username.toString(),
-                            date_created: results.rows[0].date_created,
-                            access_token: results.rows[0].access_token
-                        }
-                        console.log(user);
-                        const user_id = user.user_id;
-                        const newPasswordHash = crypto.createHash('md5').update(password).digest('hex');
-                        const oldPasswordHash = user.password_hash;
-                        if (newPasswordHash !== oldPasswordHash) {
-                            console.log("Password is not correct");
-                            const myResponse = new responseModel("Some error occurred", {}, "Password is not correct");
-                            response.status(403).send(myResponse.toJson());
+                console.error('connection error', err);
+                response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
+            } else
+                sql.query("select * from users where email = '" + userEmail + "';",
+                    async function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            response.status(500).send(serverError(err));
                             done()
                             return
                         }
 
-                        const accessToken = jwt.sign(
-                            {user_id: user_id, userEmail: userEmail.toString()},
-                            "secretKey",
-                            {
-                                expiresIn: "10d",
+                        if (results.rowCount === 1) {
+                            const user = {
+                                user_id: results.rows[0].user_id,
+                                email: results.rows[0].email.toString(),
+                                password_hash: results.rows[0].password_hash,
+                                username: results.rows[0].username.toString(),
+                                date_created: results.rows[0].date_created,
+                                access_token: results.rows[0].access_token
                             }
-                        );
-                        user.access_token = accessToken;
-                        await sql.query("update users set access_token = '" + accessToken + "' where user_id = '" + user_id + "';",
-                            function (err) {
-                                if (err) {
-                                    console.log(err);
-                                    response.status(500).send(serverError(err));
-                                    return
-                                }
-                                const myResponse = new responseModel(null, user, "Success");
-                                response.status(200).json(myResponse.toJson());
+                            console.log(user);
+                            const user_id = user.user_id;
+                            const newPasswordHash = crypto.createHash('md5').update(password).digest('hex');
+                            const oldPasswordHash = user.password_hash;
+                            if (newPasswordHash !== oldPasswordHash) {
+                                console.log("Password is not correct");
+                                const myResponse = new responseModel("Some error occurred", {}, "Password is not correct");
+                                response.status(403).send(myResponse.toJson());
                                 done()
-                            });
-                    } else {
-                        console.log("User Not Exist. Please Register");
-                        const myResponse = new responseModel("Some error occurred", {}, "User Not Exist");
-                        response.status(404).send(myResponse.toJson())
-                        done()
-                    }
-                });
+                                return
+                            }
+
+                            const accessToken = jwt.sign(
+                                {user_id: user_id, userEmail: userEmail.toString()},
+                                "secretKey",
+                                {
+                                    expiresIn: "1000d",
+                                }
+                            );
+                            user.access_token = accessToken;
+                            await sql.query("update users set access_token = '" + accessToken + "' where user_id = '" + user_id + "';",
+                                function (err) {
+                                    if (err) {
+                                        console.log(err);
+                                        response.status(500).send(serverError(err));
+                                        return
+                                    }
+                                    const myResponse = new responseModel(null, user, "Success");
+                                    response.status(200).json(myResponse.toJson());
+                                    done()
+                                });
+                        } else {
+                            console.log("User Not Exist. Please Register");
+                            const myResponse = new responseModel("Some error occurred", {}, "User Not Exist");
+                            response.status(404).send(myResponse.toJson())
+                            done()
+                        }
+                    });
         });
     } catch (err) {
         console.log(err);

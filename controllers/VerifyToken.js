@@ -16,7 +16,8 @@ const verifyToken = async (req, res, next) => {
         return next();
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
             sql.query("SELECT access_token FROM users WHERE user_id ='" + req.userTokenDecoded.user_id + "';",
                 async function (err, results) {

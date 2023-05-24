@@ -11,7 +11,8 @@ exports.upload = async function (req, response) {
         const bucketName = "user-" + req.userTokenDecoded.user_id
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
             if (!req.files) {
                 response.status(404).send("File was not found");
@@ -160,7 +161,8 @@ exports.userPhotoList = async function (req, response) {
     try {
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
 
             const user_id = req.userTokenDecoded.user_id;
@@ -238,7 +240,8 @@ exports.downloadPhoto = async function (req, response) {
     try {
         pool.connect(function (err, sql, done) {
             if (err) {
-                return console.error('connexion error', err);
+                console.error('connection error', err);
+                return response.status(500).send(serverError("Ошибка подключения к базе данных. Проверьте подключение"));
             }
             let fullPhoto = true
             if (req.params["size"] === "thumbnail")

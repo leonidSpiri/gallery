@@ -26,6 +26,7 @@ const pool = new Pool({
     database: POSTGRES_DB,
     password: POSTGRES_PASSWORD,
     port: DB_PORT,
+    connectionTimeoutMillis: 5000,
 });
 
 module.exports = {

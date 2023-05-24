@@ -1,21 +1,27 @@
 const pool = require('../config/AppConfig').pool;
 
 const createAllTables = async () => {
-    pool.connect(function (err, sql, done) {
-        if (err)
-            return console.error('connexion error', err);
+    try {
+        pool.connect(function (err, sql, done) {
+            if (err) {
+                console.error('connection error', err);
+                return;
+            }
 
-        sql.query(sqlCode,
-            async function (err, results) {
-                if (err) {
-                    console.log(err);
+            sql.query({query: sqlCode, timeout: 10000},
+                async function (err, results) {
+                    if (err) {
+                        console.log(err);
+                        done()
+                        return
+                    }
+                    console.log(results)
                     done()
-                    return
-                }
-                console.log(results)
-                done()
-            });
-    });
+                });
+        });
+    } catch (err) {
+        console.log(err);
+    }
 }
 module.exports = createAllTables;
 
