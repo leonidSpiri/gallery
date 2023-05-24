@@ -4,6 +4,116 @@
     <meta charset="UTF-8">
     <title>Add media</title>
     <style>
+        #good_snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+
+        #good_snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        #add_snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+
+        #add_snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        #bad_snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+
+        #bad_snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @-webkit-keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
         header {
             background-color: #fff;
             padding: 20px;
@@ -53,15 +163,26 @@
     </form>
 </div>
 
-
+<div id="good_snackbar">Файл успешно загружен</div>
+<div id="add_snackbar">Необходимо добавить фото</div>
+<div id="bad_snackbar">Ошибка подключения к базе данных. Проверьте подключение</div>
 <script>
     document.getElementById("upload").addEventListener("click", function (e) {
         e.preventDefault();
+        const file = document.getElementById("file").files[0];
+        if (file === undefined) {
+            const x = document.getElementById("add_snackbar");
+            x.className = "show";
+            setTimeout(function () {
+                x.className = x.className.replace("show", "");
+            }, 5000);
+            return;
+        }
         const token = "Bearer " + localStorage.getItem("accessToken")
         if (token === "Bearer null" || token === "Bearer undefined" || token === "Bearer ") {
             window.location.href = "/login";
         }
-        const file = document.getElementById("file").files[0];
+
         const formData = new FormData();
         formData.append("file", file);
 
@@ -74,10 +195,18 @@
             console.log(responseBody);
             console.log(responseBody.message);
             if (responseBody.message === "Success") {
-                alert("Файл загружен");
+                const x = document.getElementById("good_snackbar");
+                x.className = "show";
+                setTimeout(function () {
+                    x.className = x.className.replace("show", "");
+                }, 5000);
                 window.location.href = "/";
             } else {
-                alert("Ошибка загрузки файла");
+                const x = document.getElementById("bad_snackbar");
+                x.className = "show";
+                setTimeout(function () {
+                    x.className = x.className.replace("show", "");
+                }, 5000);
             }
         });
 

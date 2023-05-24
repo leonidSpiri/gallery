@@ -8,7 +8,7 @@ const createAllTables = async () => {
                 return;
             }
 
-            sql.query({query: sqlCode, timeout: 10000},
+            sql.query(sqlCode,
                 async function (err, results) {
                     if (err) {
                         console.log(err);
