@@ -1,14 +1,12 @@
-version: "3.9"
-
 services:
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.6.5
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
     ports:
-      - "3000:3000"          # снаружи остаётся 3000, внутри у Traefik 3000
+      - "3000:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
