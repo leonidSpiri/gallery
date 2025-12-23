@@ -27,12 +27,11 @@ exports.factorialSimulation = (req, res) => {
 
   const numericInput = BigInt(parsedInput);
   const factorial = computeFactorial(numericInput);
-  const factorialString = factorial.toString();
 
   return res.json({
     calculation: "factorial",
     input: parsedInput,
-    digits: factorialString.length,
-    preview: buildPreview(factorialString),
+    digits: factorial.toString().length,
+    preview: buildPreview(factorial),
   });
 };
