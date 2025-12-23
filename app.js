@@ -8,6 +8,7 @@ const createTables = require("./dump/createTable");
 const userRouter = require("./routes/UserRouter");
 const mediaRouter = require("./routes/MediaRouter");
 const viewRouter = require("./routes/ViewRouter");
+const simulationRouter = require("./routes/SimulationRouter");
 
 app.use(busboy());
 app.use(express.json());
@@ -19,6 +20,7 @@ app.get("/health", (req, res) => res.status(200).send("ok"));
 
 app.use("/users", userRouter);
 app.use("/media", mediaRouter);
+app.use("/simulation", simulationRouter);
 app.use("/", viewRouter);
 
 const PORT = process.env.PORT || 3000;
