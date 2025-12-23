@@ -17,8 +17,15 @@ const buildPreview = (value) => {
 exports.factorialSimulation = (req, res) => {
   const maxInput = 5000;
   const rawInput = req.query.n ?? "2000";
-  const parsedInput = Number.parseInt(rawInput, 10);
+  const normalizedInput = String(rawInput).trim();
 
+  if (!/^\d+$/.test(normalizedInput)) {
+    return res.status(400).json({
+      error: `Введите целое число от 0 до ${maxInput} в параметре n`,
+    });
+  }
+
+  const parsedInput = Number.parseInt(normalizedInput, 10);
   if (Number.isNaN(parsedInput) || parsedInput < 0 || parsedInput > maxInput) {
     return res.status(400).json({
       error: `Введите целое число от 0 до ${maxInput} в параметре n`,
