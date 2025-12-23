@@ -6,8 +6,7 @@ const computeFactorial = (value) => {
   return result;
 };
 
-const buildPreview = (value) => {
-  const valueString = value.toString();
+const buildPreview = (valueString) => {
   if (valueString.length <= 25) {
     return valueString;
   }
