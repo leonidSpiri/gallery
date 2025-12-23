@@ -28,7 +28,7 @@ exports.factorialSimulation = (req, res) => {
   const parsedInput = Number.parseInt(normalizedInput, 10);
   if (Number.isNaN(parsedInput) || parsedInput < 0 || parsedInput > maxInput) {
     return res.status(400).json({
-      error: `Введите целое число от 0 до ${maxInput} в параметре n`,
+      error: `Please provide an integer between 0 and ${maxInput} in the "n" parameter`,
     });
   }
 
