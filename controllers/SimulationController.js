@@ -6,8 +6,7 @@ const computeFactorial = (value) => {
   return result;
 };
 
-const buildPreview = (value) => {
-  const valueString = value.toString();
+const buildPreview = (valueString) => {
   if (valueString.length <= 25) {
     return valueString;
   }
@@ -27,11 +26,12 @@ exports.factorialSimulation = (req, res) => {
 
   const numericInput = BigInt(parsedInput);
   const factorial = computeFactorial(numericInput);
+  const factorialString = factorial.toString();
 
   return res.json({
     calculation: "factorial",
     input: parsedInput,
-    digits: factorial.toString().length,
-    preview: buildPreview(factorial),
+    digits: factorialString.length,
+    preview: buildPreview(factorialString),
   });
 };
